@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useHarness } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { BRAND_NAME } from "@/lib/brand";
+import { DEMO } from "@/lib/demo";
 
 /** The mark: a plain ring and dot in the primary colour. Swap for a logo
  * by dropping an image in public/ and rendering it here. */
@@ -46,7 +47,7 @@ function LockScreen() {
           <Mark className="size-9 text-primary" />
           <div className="leading-none">
             <p className="wordmark text-[17px] text-primary">{BRAND_NAME}</p>
-            {BRAND_NAME !== "harness" && <p className="wordmark-light mt-0.5 text-[11px] text-muted-foreground">harness</p>}
+            <p className="wordmark-light mt-0.5 text-[11px] text-muted-foreground">harness</p>
           </div>
         </div>
         <form onSubmit={submit} className="space-y-2.5">
@@ -97,7 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/organic" className="flex items-center gap-2">
             <Mark className="size-6 text-primary" />
             <span className="wordmark text-[15px] text-primary">{BRAND_NAME}</span>
-            {BRAND_NAME !== "harness" && <span className="wordmark-light text-[11px] text-muted-foreground">harness</span>}
+            <span className="wordmark-light text-[11px] text-muted-foreground">harness</span>
           </Link>
           <nav className="hidden items-center gap-1 sm:flex">
             {TABS.map(({ href, label, icon: Icon, live }) =>
@@ -127,6 +128,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="ml-auto flex items-center gap-2">
+            {DEMO && (
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-mono text-[11px] text-amber-700" title="Every post and number on screen is invented sample data. Buttons don't send anything.">
+                demo · sample data
+              </span>
+            )}
             <Link
               href="/settings"
               aria-label="Settings"

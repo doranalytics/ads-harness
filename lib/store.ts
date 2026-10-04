@@ -7,6 +7,7 @@
 import { create } from "zustand";
 import registry from "./generated/registry.json";
 import { Account, Connector, SessionMode, Snapshot, emptySnapshot } from "./types";
+import { DEMO } from "./demo";
 
 const TOKEN_KEY = "harness-token";
 
@@ -26,6 +27,8 @@ function sessionToken(): string {
 /** Calls one of the app's API routes with this device's session token and
  * surfaces the route's own error message when it fails. */
 async function appApi<T>(path: string, init?: RequestInit): Promise<T> {
+  // The demo only reads its sample data; nothing goes to Meta, Apify or Supabase.
+  if (DEMO && path !== "/api/data") throw new Error("This is the demo — nothing is sent anywhere. Deploy your own copy to use it (see the README).");
   const res = await fetch(path, {
     ...init,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken()}`, ...init?.headers },
@@ -73,6 +76,12 @@ export const useHarness = create<HarnessState>((set, get) => ({
 
   init: async () => {
     if (get().hydrated) return;
+    if (DEMO) {
+      set({ mode: "live" });
+      await get().refresh();
+      set({ hydrated: true });
+      return;
+    }
     if (!sessionToken()) {
       set({ hydrated: true, mode: "locked" });
       return;
@@ -83,7 +92,7 @@ export const useHarness = create<HarnessState>((set, get) => ({
   },
 
   refresh: async () => {
-    if (!sessionToken()) return;
+    if (!sessionToken() && !DEMO) return;
     try {
       const live = await appApi<{ configured: boolean; snapshot?: Snapshot }>("/api/data");
       if (live.configured && live.snapshot) {

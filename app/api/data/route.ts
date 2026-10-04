@@ -1,6 +1,8 @@
 import { metaInstallMetrics } from "@/lib/meta-installs";
 import { authorized, supaConfigured, supaJson } from "@/lib/server";
-import { emptySnapshot, type Snapshot } from "@/lib/types";
+import { emptySnapshot, type Connector, type Snapshot } from "@/lib/types";
+import { DEMO, demoSnapshot } from "@/lib/demo";
+import registry from "@/lib/generated/registry.json";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,8 @@ export const dynamic = "force-dynamic";
  * made-up number. `configured: false` only means Supabase env is missing.
  */
 export async function GET(req: Request) {
+  // Demo mode: invented sample data, no password (lib/demo.ts).
+  if (DEMO) return Response.json({ configured: true, snapshot: demoSnapshot((registry as { connectors: Connector[] }).connectors) });
   if (!authorized(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!supaConfigured()) return Response.json({ configured: false });
 

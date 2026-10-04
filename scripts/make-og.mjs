@@ -4,7 +4,7 @@ import sharp from 'sharp';
 
 const BRAND = '#406cb8';
 const DEEP = '#10233c';
-const NAME = (process.env.NEXT_PUBLIC_BRAND_NAME || 'harness').replace(/[<&>"]/g, '');
+const NAME = `${(process.env.NEXT_PUBLIC_BRAND_NAME || 'ads').replace(/[<&>"]/g, '')} harness`;
 
 const svg = Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">

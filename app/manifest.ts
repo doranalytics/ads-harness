@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next";
-import { BRAND_NAME } from "@/lib/brand";
+import { APP_NAME, BRAND_NAME } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: BRAND_NAME,
+    name: APP_NAME,
     short_name: BRAND_NAME,
     description: "Instagram → ads, one feed.",
     start_url: "/",

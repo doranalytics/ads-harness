@@ -9,6 +9,7 @@ import { PaidSummary, type PaidPreset } from "@/components/paid-summary";
 import { RoasChart, type RoasDay, type RoasMetric } from "@/components/roas-chart";
 import { PaidAds } from "@/components/paid-ads";
 import { COST_LABEL, costByDay, costSource } from "@/lib/cost";
+import { DEMO } from "@/lib/demo";
 import { adPeriodMetrics, dayOffset, sumPaidMetrics, type PaidRange } from "@/lib/paid-report";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,13 +75,14 @@ export default function PaidPage() {
   const costDays = useMemo(() => new Map(snapshot.ads.map((a) => [a.id, costByDay(snapshot, new Set([a.id]), 7)])), [snapshot]);
   // The cost line an ad gets flagged over. Per browser; edit it in the
   // toolbar. Empty (no alert) until someone sets one.
+  const startAlert = DEMO ? 9 : null; // the demo shows the red days
   const [costAlert, setCostAlertState] = useState<number | null>(() => {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") return startAlert;
     try {
       const v = window.localStorage.getItem("harness.costAlert");
-      return v ? Number(v) : null;
+      return v == null ? startAlert : v ? Number(v) : null;
     } catch {
-      return null;
+      return startAlert;
     }
   });
   const setCostAlert = (v: number | null) => {

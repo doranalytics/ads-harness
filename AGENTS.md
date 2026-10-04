@@ -6,7 +6,8 @@ Read `README.md` for what this app is and how it's set up.
 
 - **Never invent a number.** If a connector isn't set up, show an empty
   state or "—" and point at Settings. A zero is a measurement; a dash means
-  unknown.
+  unknown. The one exception is demo mode (`NEXT_PUBLIC_DEMO=1`,
+  `lib/demo.ts`): invented sample data, always badged "demo".
 - **The Snapshot shape is a contract.** `lib/types.ts` → `Snapshot` is what
   `app/api/data/route.ts` serves and what every screen reads. Change one,
   change the other, and the schema in `supabase/migrations/` (add a new

@@ -1,4 +1,4 @@
-# harness — Instagram → Meta ads, one feed
+# ads harness — Instagram → Meta ads, one feed
 
 A small web app for running a business's Instagram and its Meta ads from one
 place:
@@ -19,6 +19,17 @@ place:
 It's a Next.js app on **Vercel** with its data in **Supabase**. There is no
 server of your own to run: Vercel Cron runs the daily syncs, and every
 button calls Meta or Apify directly from the app's API routes.
+
+## See it first: the demo
+
+Set one environment variable, `NEXT_PUBLIC_DEMO=1`, and the app runs with no
+password and an invented coffee-roaster account: posts, ads, costs and red
+alert days. Nothing is sent anywhere, and a **demo · sample data** badge stays
+in the header. To put it online, import the repo in Vercel (**Add New →
+Project**), add `NEXT_PUBLIC_DEMO` = `1`, and deploy. No other setup needed.
+Locally: `NEXT_PUBLIC_DEMO=1 npm run dev`.
+
+For a real deployment, leave `NEXT_PUBLIC_DEMO` unset.
 
 ## What you need
 

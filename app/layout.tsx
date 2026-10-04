@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { Toaster } from "@/components/ui/sonner";
-import { BRAND_NAME } from "@/lib/brand";
+import { APP_NAME } from "@/lib/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,12 +23,12 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  title: `${BRAND_NAME} — instagram → ads, one feed`,
+  title: `${APP_NAME} — instagram → ads, one feed`,
   description:
     "Your Instagram feed with views and engagement per post, a Promote button that runs any post as a Meta ad, and the Meta campaign's spend and cost per result in one place.",
-  applicationName: BRAND_NAME,
+  applicationName: APP_NAME,
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: BRAND_NAME },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: APP_NAME },
 };
 
 export const viewport: Viewport = {
