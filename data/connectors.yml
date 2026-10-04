@@ -1,0 +1,43 @@
+# Connector registry — where every number in the harness comes from, and
+# whether that pipe is live. The app updates `status` itself once a key is
+# saved and a sync succeeds; this file is only the starting state.
+#
+# status: wired | needs-keys | planned
+connectors:
+  - key: meta-ads
+    name: Meta Ads
+    role: Paid spend + boosting
+    status: needs-keys
+    summary: >-
+      Meta Marketing API, called straight from the app with a System User
+      token from your Meta Business account. Syncs campaigns, ad sets, ads,
+      spend and results daily (and on Sync now); the Promote button runs an Instagram
+      post as an ad in the ad set you choose.
+    unlocks: the Paid tab, Promote to paid, pause/resume and budgets
+    needs: >-
+      Settings → Connector keys → Meta Ads: access token, ad account id,
+      promote ad set id, Facebook Page id and the link ads send people to.
+      Step by step: docs/meta-business-setup.md.
+
+  - key: apify
+    name: Apify
+    role: Organic performance
+    status: needs-keys
+    summary: >-
+      Public Instagram scrape for the accounts in your roster: the latest
+      posts with views, likes and comments, plus follower counts. Runs once
+      a day on its own and whenever you press Sync on the Connectors tab.
+    unlocks: the Organic tab
+    needs: Apify API token (apify.com → Settings → Integrations), pasted in Settings → Connector keys
+
+  - key: appstack
+    name: AppStack
+    role: App install attribution (optional)
+    status: planned
+    summary: >-
+      Only for businesses promoting a mobile app. Attributes installs and
+      trials to each Meta ad, so the Paid tab shows cost per install and
+      cost per trial instead of Meta's cost per result. Leave it alone if
+      you are not promoting an app.
+    unlocks: cost per install, cost per trial, ROAS from in-app purchases
+    needs: AppStack MCP key scoped to your app, plus APPSTACK_APP_ID in the environment

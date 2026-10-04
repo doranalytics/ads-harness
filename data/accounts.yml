@@ -1,0 +1,12 @@
+# The account roster — the Instagram account (and any others) the harness
+# watches. Easiest is Settings in the app; this file is only the starting
+# point the app boots with before Supabase has its own rows.
+#
+# Example:
+#   accounts:
+#     - id: ig-yourhandle        # "ig-" + the handle, no @
+#       platform: instagram      # instagram | tiktok | x | youtube | facebook
+#       handle: yourhandle
+#       label: Your Brand
+#       kind: brand              # brand | personal
+accounts: []

@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/meta/sync?days=3",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/apify/sync",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/appstack/sync",
+      "schedule": "25 7 * * *"
+    }
+  ]
+}
