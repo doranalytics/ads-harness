@@ -1,12 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { mkdtemp, symlink, rm } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { createSnapshotReader, paidAds, timeSeries, businessProfileSchema } from "../mcp/analytics.mjs";
 import { loadTs } from "./load-ts.mjs";
 
 const snapshot = loadTs("lib/demo.ts", {}, { process: { env: { NEXT_PUBLIC_DEMO: "1" } } }).demoSnapshot([]);
+test("stdio starts through an absolute symlink path used by client configuration", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "ads-mcp-entry-"));
+  const entry = join(directory, "server.mjs");
+  const client = new Client({ name: "symlink-launch-test", version: "1.0.0" });
+  try {
+    await symlink(resolve("scripts/mcp-server.mjs"), entry);
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: [entry], stderr: "pipe" }));
+    assert.equal((await client.listTools()).tools.length, 8);
+    assert.equal((await client.listPrompts()).prompts[0].name, "plan_business_dashboard");
+  } finally { await client.close(); await rm(directory, { recursive: true, force: true }); }
+});
 test("read token only authorizes reporting, never an action route", () => {
   const s = loadTs("lib/server.ts", {}, { process: { env: { MCP_READ_TOKEN: "offline-read-only", SESSION_TOKEN: "different-owner-token" } } });
   const req = new Request("http://localhost", { headers: { authorization: "Bearer offline-read-only" } });

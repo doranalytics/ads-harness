@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
+import { realpathSync } from "node:fs";
 import { createSnapshotReader, metadata, overview, paidAds, timeSeries, campaignBreakdown, businessBrief } from "../mcp/analytics.mjs";
 
 export function createHarnessMcp(readSnapshot = createSnapshotReader()) {
@@ -36,7 +36,12 @@ export function createHarnessMcp(readSnapshot = createSnapshotReader()) {
   return server;
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+function isEntrypoint() {
+  try { return !!process.argv[1] && realpathSync(fileURLToPath(import.meta.url)) === realpathSync(process.argv[1]); }
+  catch { return false; }
+}
+
+if (isEntrypoint()) {
   try { await createHarnessMcp().connect(new StdioServerTransport()); }
   catch { console.error("Ads Harness MCP could not start. Check the local URL/config; no credentials are printed."); process.exitCode = 1; }
 }
