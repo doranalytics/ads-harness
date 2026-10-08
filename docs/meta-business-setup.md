@@ -1,134 +1,83 @@
-# Meta Business setup
+# Meta Business setup for your own ads harness
 
-What you're building: one **business portfolio** that owns your Instagram
-account, your Facebook Page and an ad account. Inside it go one campaign with
-one **promote ad set**, and one **System User** whose token lets the app read
-the ad account and create ads in it.
+Start with reporting. Leave `META_WRITES_ENABLED=0` until you deliberately choose ad actions. This checklist is for assets you control, not onboarding third-party advertisers.
 
-Meta moves menus around often. If a name below doesn't match what you see,
-search for it in Business settings; the pieces are the same.
+The app calls Meta Graph/Marketing API directly with a System User token. It does not use Meta MCP or Facebook Login OAuth onboarding. A Meta app is required by the System User token issuance path, but the harness needs no app ID or app secret environment variables.
 
-## 1. Make Instagram a professional account, linked to a Page
+Meta changes menus, eligibility and permission access. Match the assets and permissions below rather than expecting identical menu labels. Setup can be blocked by access levels, verification or review.
 
-1. In the Instagram app: **Settings → Account type and tools → Switch to
-   professional account**, and pick **Business** (Creator works too).
-2. You need a Facebook Page for the business; create one if you don't have
-   one. Connect it in Instagram: **Edit profile → Page → Connect**, or from the
-   Page's settings under **Linked accounts → Instagram**.
+## 1. Prepare owned assets
 
-Meta runs Instagram ads through the Page, which is why the Page is needed.
+- A Meta Business portfolio with your ad account.
+- For owned Instagram media lookup and ads, a professional Instagram account linked to your Facebook Page, both assigned to the portfolio/system user and ad account as applicable.
+- Access to manage/assign these assets. Billing is needed before actual delivery.
+- For promotion, an existing campaign and ad set with a reviewed audience, objective, placements, budget and destination. This harness does not create them.
+- For sales measurement, a working dataset/pixel/conversions setup that reports the outcome you actually care about. The harness does not install it.
 
-## 2. Business portfolio with the three assets
+Set up the campaign/ad set in Ads Manager and keep the relevant entities paused while preparing them. Do not activate an example ad just to complete this checklist. Meta UI may require an ad to publish an ad set; keep that ad and its parent entities paused and verify their states in Ads Manager.
 
-1. Go to [business.facebook.com](https://business.facebook.com) and create a
-   business portfolio, if you don't already have one.
-2. Open **Settings** (Business settings) and add each asset you own under
-   **Accounts**:
-   - **Pages → Add** → your Facebook Page
-   - **Instagram accounts → Add** → your Instagram account
-   - **Ad accounts → Add** → your existing ad account, or **Create a new ad
-     account** (set the currency and timezone carefully; they can't be
-     changed later)
-3. On the ad account: **Payment methods** → add a card. Nothing runs without
-   one.
+## 2. Create/select an app and System User
 
-## 3. (Recommended) Meta pixel on your site
+1. In Meta for Developers, create/select an app with the appropriate Marketing API use case and associate it with your business portfolio. Register as a developer if prompted.
+2. In Business settings → Users → System users, create/select a system user with suitable asset access.
+3. Assign the app and the ad account. For Instagram promotion, assign the Page and Instagram assets needed by the identity/media lookups.
+4. Choose **Generate token**, select the app, and request the relevant permissions. Use the expiration options Meta offers. Even a token without a scheduled expiry can be revoked or invalidated.
+5. Copy it directly into the app's Settings form privately. Never paste it into chat, screenshots or a source file.
 
-For **cost per result** to mean **cost per sale**, Meta has to see sales.
-In **Events Manager → Connect data sources → Web**, create a pixel/dataset
-and put it on your site. Shopify, Squarespace, Wix and WordPress all have a
-Meta/Facebook integration that does this for you. Check that **Purchase**
-events arrive before you run sales ads.
+[Meta's token guide](https://developers.facebook.com/documentation/facebook-login/guides/access-tokens) and [System User overview](https://developers.facebook.com/docs/business-management-apis/system-users/overview/) describe app-associated issuance.
 
-Skip this and you can still run Traffic ads. "Results" will then be link
-clicks.
+## 3. Understand permission scope
 
-## 4. The campaign and the promote ad set
+| Feature | Needed access |
+| --- | --- |
+| Campaign/ad set/ad reporting and insights | `ads_read`, with the ad account assigned to the token's system user |
+| Paused ad creation and status/budget controls | `ads_management`, with management access to that ad account |
+| Business/Page/Instagram identity and owned-media lookup | Applicable `business_management`, `pages_show_list`, `pages_read_engagement`, `instagram_basic` permissions for this Facebook Login based integration, plus assigned Page/Instagram assets |
 
-In [Ads Manager](https://adsmanager.facebook.com), under your ad account:
+Start with reporting scope and grant management only if you choose actions. If a permission is absent from token generation, inspect the app's use case, access level and asset assignments. Do not replace that diagnosis with an app secret or a different person's token.
 
-1. **Create → campaign objective.** Pick the one that matches what you want:
-   - **Sales** — optimise for purchases (needs the pixel from step 3)
-   - **Leads** — sign-ups and enquiries
-   - **Traffic** — visits to your site
-2. **Ad set** (this is the "promote ad set" the app drops posts into):
-   - **Conversion location: Website**, and for Sales pick your pixel and the
-     **Purchase** event
-   - **Budget: daily**, an amount you're comfortable with. Every promoted post
-     shares it, and you can change it later from the app's Paid tab.
-   - **Audience**: your call
-   - **Placements**: Advantage+ placements, or Manual with **Instagram** feed,
-     Stories and Reels included
-3. **Ad**: Ads Manager won't publish an empty ad set, so give it one ad.
-   The easiest is **Use existing post** → pick an Instagram post. Publish.
-   You can pause or delete that ad later; the ad set stays.
+Do not assume every configuration skips review. Other businesses' assets or advanced permissions can require business verification, advanced access and App Review. [Meta's Marketing API app use cases](https://developers.facebook.com/documentation/development/create-an-app/marketing-api-use-cases) are the reference. There is no guarantee of same-day eligibility or approval.
 
-Write down two IDs:
+## 4. Connect reporting first
 
-- **Ad account id**: in the Ads Manager URL, `act=1234567890`. Enter it as
-  `act_1234567890` (or just the number).
-- **Ad set id**: Ads Manager → **Ad sets** tab → the ad set's row. Turn on
-  the **Ad set ID** column (Columns → Customize columns), or open the ad
-  set and copy the number after `selected_adset_ids=` in the URL.
-
-## 5. Page id
-
-On the Facebook Page: **About → Page transparency** shows the Page ID. You
-can also find it in Business settings → Accounts → Pages, with the Page
-selected.
-
-## 6. The System User and its token
-
-The app acts as a **System User**: a non-human user in your business whose
-token doesn't expire when someone changes their password.
-
-1. **An app for the token.** Meta's token screen asks you to pick an app, so
-   create one first. In Business settings → **Accounts → Apps → Add → Create
-   a new app ID**. This opens developers.facebook.com, which asks you to
-   register as a developer once (free, a few clicks). Choose the **Business**
-   app type, give it any name, and connect it to your business portfolio. You
-   don't need to add products or submit it for review: it only signs the
-   token.
-2. **Business settings → Users → System users → Add.** Name it (e.g.
-   `harness`) and set the role to **Admin**.
-3. With the system user selected, **Assign assets**:
-   - your **ad account** → full control (Manage ad account)
-   - your **Page** → full control
-   - your **Instagram account** → full control
-   - the **app** you just made
-4. **Generate new token**:
-   - App: the one from step 1
-   - Expiration: **Never**
-   - Permissions: `ads_management`, `ads_read`, `business_management`,
-     `pages_show_list`, `pages_read_engagement`, `instagram_basic`
-5. Copy the token now; Meta only shows it once.
-
-## 7. Paste it into the app
-
-**Settings → Connector keys → Meta Ads**:
+In harness → Settings → Connector keys → Meta Ads, privately save:
 
 | Field | Value |
-|---|---|
-| Access token | the token from step 6 |
-| Ad account id | `act_…` from step 4 |
-| Promote ad set id | the ad set id from step 4 |
-| Facebook Page id | from step 5 |
-| Ad link | the page the ads send people to (product, shop, booking) |
-| Button | `SHOP_NOW`, `LEARN_MORE`, `SIGN_UP`, `BOOK_NOW`, `ORDER_NOW`, `CONTACT_US`… |
+| --- | --- |
+| Access token | Your System User token |
+| Ad account ID | Numeric ID or `act_…`, found in Ads Manager's account selector/URL |
 
-**Save**, then **Connectors → Meta Ads → Sync now**. Your campaign should
-appear in the Paid tab. Then go to Organic and press **Promote to paid** on a
-post.
+Then Connectors → Meta Ads → Sync now. Confirm names, spend, date range and recognized result labels against Ads Manager. Manual Sync is read-only against Meta, regardless of the automation settings.
 
-## When something says no
+The server defaults to Marketing/Graph `v26.0`, overridden by `META_GRAPH_VERSION`. Check Meta's currently supported versions if requests return version errors. No live account call is part of the public starter's verification.
 
-The app shows Meta's own error text. The usual ones:
+## 5. Optional paused ad draft
 
-| Message | Fix |
-|---|---|
-| *is not an Instagram identity this token can use* | The Instagram account isn't connected to the Page, or isn't assigned to the system user. Steps 1, 2 and 6.3. |
-| *Not in @you's owned media* | The post is a collab created by the other account, or it's archived. Only posts your account authored can run. |
-| *not eligible for advertising* | Usually licensed music or branded content. Meta won't run that post. |
-| *(#200) permission* or *(#10) …* | The token is missing a permission or an asset. Generate a new one with everything in step 6.4. |
-| *Payment* / account disabled | Fix billing in the ad account's Payment settings. |
-| Ads stay **in review** | Normal for a few minutes, sometimes longer. Rejections show in Ads Manager with Meta's reason. |
+Add the following to the same Settings form:
+
+| Field | Value |
+| --- | --- |
+| Promote ad set ID | Existing ad set ID, available as an Ads Manager column |
+| Facebook Page ID | The Page connected to the Instagram identity |
+| Ad link | The real destination you reviewed |
+| Button | A supported CTA such as `LEARN_MORE`, `SHOP_NOW` or `SIGN_UP` |
+
+Check audience, currency, budget, parent status, identity, destination and billing in Ads Manager. The UI uses dollar formatting and the budget conversion assumes two decimal minor units. Only then set server-only `META_WRITES_ENABLED=1` and redeploy your own app.
+
+In Organic, Promote → **Create paused ad**. The post must be an eligible owned post. Inspect the draft in Paid → Paused and Ads Manager. Resume requests a separate spending confirmation. Parent entities must also permit delivery. The harness does not activate parents automatically.
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Permission error (#10 / #200) | App use case/access level, token permission and assigned asset access |
+| No Instagram identity available | Professional IG → linked Page → business/ad-account/system-user assignments |
+| Owned media not found | Post may belong to a collaboration partner, be archived or be unavailable to that token |
+| Not eligible for advertising | Meta eligibility, licensed music, collaboration/branded-content restrictions |
+| Version error | Supported `META_GRAPH_VERSION`; redeploy after server setting change |
+| Schema error / auto_off_started_at missing | Apply missing numbered migrations, especially 0002 and 0003 |
+| Live actions are off | Reporting is working; only intentionally set `META_WRITES_ENABLED=1` after review |
+| Paused draft not visible | Paid → Paused filter, Ads Manager, then reporting Sync |
+| Active ad does not deliver | Parent campaign/ad set, review, policy, billing, audience and scheduling |
+
+System User tokens are credentials. Revoke/replace a leaked token in Meta and update your app privately. Keep the live account out of the public class demo.

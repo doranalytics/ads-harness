@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ExternalLink, ImageOff } from "lucide-react";
-import type { Ad, Post } from "@/lib/types";
+import type { Ad, AutoOffEvent, Post } from "@/lib/types";
 import { type PaidMetrics, paidRates } from "@/lib/paid-report";
 import { count, money, percent, multiple } from "@/components/paid-summary";
 import { Sparkline } from "@/components/charts";
@@ -24,6 +24,20 @@ function CostAlertChip({ days, alert, source }: { days: CostDay[]; alert: number
       title={`${L.long} on ${d.date}: ${d.cost != null ? usd(d.cost) : `${usd(d.spend)} spent, no ${L.unit}`} — alert is ${usd(alert)}`}
     >
       {L.short} {d.cost != null ? usd(d.cost) : `no ${L.unit}`}
+    </span>
+  );
+}
+
+/** Chip on an ad the auto-off rule paused, with the 7-day cost it was judged on. */
+function AutoOffChip({ event, source }: { event: AutoOffEvent; source: CostSource }) {
+  const L = COST_LABEL[source];
+  const judged = event.cost != null ? `${usd(event.cost)} ${L.long.toLowerCase()}` : `${usd(event.spend)} spent, no ${L.unit}`;
+  return (
+    <span
+      className="inline-block whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase text-muted-foreground"
+      title={`Auto-off paused this ad on ${event.at.slice(0, 10)}: ${judged} over its last 7 days, limit ${usd(event.limit)}. Resume it and it gets a fresh 7 days.`}
+    >
+      auto-off · {event.cost != null ? usd(event.cost) : `no ${L.unit}`}
     </span>
   );
 }
@@ -67,13 +81,16 @@ function CostSpark({ days, alert, source, className }: { days: CostDay[]; alert:
   );
 }
 
-export function PaidAds({ ads, metrics, posts, status, action, costDays, costAlert, source }: {
+export function PaidAds({ ads, metrics, posts, status, action, costDays, costAlert, source, autoOff, isActive }: {
   ads: Ad[]; metrics: Map<string, PaidMetrics>; posts: Map<string, Post>;
   /** the headline cost per day, last 7 days, per ad id */
   costDays: Map<string, CostDay[]>;
   /** the cost ceiling to flag; null = no alert */
   costAlert: number | null;
   source: CostSource;
+  /** the latest auto-off per ad id; shown while the ad is still off */
+  autoOff: Map<string, AutoOffEvent>;
+  isActive: (ad: Ad) => boolean;
   status: (ad: Ad) => ReactNode; action: (ad: Ad) => ReactNode;
 }) {
   const L = COST_LABEL[source];
@@ -89,7 +106,7 @@ export function PaidAds({ ads, metrics, posts, status, action, costDays, costAle
         // eslint-disable-next-line @next/next/no-img-element
         <img src={thumb} alt="" className="size-12 shrink-0 rounded-lg border object-cover" />
       ) : <div className="flex size-12 shrink-0 items-center justify-center rounded-lg border"><ImageOff className="size-4 text-muted-foreground" /></div>}
-      <div className="min-w-0 flex-1"><p className="text-sm font-medium leading-snug">{a.name}{a.previewUrl && <a href={a.previewUrl} target="_blank" rel="noreferrer" aria-label={`Preview ${a.name}`} className="ml-1 inline-flex text-muted-foreground"><ExternalLink className="size-3" /></a>}</p><div className="mt-1 flex flex-wrap items-center gap-2">{status(a)}<CostAlertChip days={costDays.get(a.id) ?? []} alert={costAlert} source={source} /></div></div>
+      <div className="min-w-0 flex-1"><p className="text-sm font-medium leading-snug">{a.name}{a.previewUrl && <a href={a.previewUrl} target="_blank" rel="noreferrer" aria-label={`Preview ${a.name}`} className="ml-1 inline-flex text-muted-foreground"><ExternalLink className="size-3" /></a>}</p><div className="mt-1 flex flex-wrap items-center gap-2">{status(a)}<CostAlertChip days={costDays.get(a.id) ?? []} alert={costAlert} source={source} />{!isActive(a) && autoOff.has(a.id) && <AutoOffChip event={autoOff.get(a.id)!} source={source} />}</div></div>
       {action(a)}
     </div>;
   };

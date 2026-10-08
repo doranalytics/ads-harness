@@ -6,7 +6,7 @@
 // and with it, whatever has actually synced — empty states included.
 import { create } from "zustand";
 import registry from "./generated/registry.json";
-import { Account, Connector, SessionMode, Snapshot, emptySnapshot } from "./types";
+import { Account, AutoOffEvent, AutoOffRule, Connector, SessionMode, Snapshot, emptySnapshot } from "./types";
 import { DEMO } from "./demo";
 
 const TOKEN_KEY = "harness-token";
@@ -42,7 +42,7 @@ async function appApi<T>(path: string, init?: RequestInit): Promise<T> {
   return json;
 }
 
-type MetaSyncResult = { ok: boolean; campaigns: number; adsets: number; ads: number; dailyRows: number; from: string; to: string };
+type MetaSyncResult = { ok: boolean; campaigns: number; adsets: number; ads: number; dailyRows: number; from: string; to: string; autoOff?: { paused: AutoOffEvent[]; errors: string[] } };
 type ApifySyncResult = { ok: boolean; date: string; reads: { handle: string; platform: string; followers: number | null; error: string | null }[]; posts?: { posts: number } };
 
 interface HarnessState {
@@ -57,8 +57,11 @@ interface HarnessState {
   lock: () => void;
   saveAccounts: (accounts: Account[]) => Promise<void>;
   saveConnectorKey: (key: string, fields: Record<string, string>) => Promise<void>;
-  /** Meta (and AppStack, when set up) → Supabase, then reload. */
-  syncPaid: () => Promise<void>;
+  /** Meta (and AppStack, when set up) → Supabase, then reload. Resolves
+   * with the ads auto-off paused on this sync. */
+  syncPaid: () => Promise<AutoOffEvent[]>;
+  /** Turn auto-off on or off, or move its cost limit. */
+  saveAutoOff: (change: Partial<AutoOffRule>) => Promise<void>;
   syncMeta: (days?: number) => Promise<MetaSyncResult>;
   /** Apify: latest posts + follower counts for every roster account. */
   syncApify: () => Promise<ApifySyncResult>;
@@ -140,23 +143,38 @@ export const useHarness = create<HarnessState>((set, get) => ({
   },
 
   syncPaid: async () => {
-    if (get().syncingPaid) return;
+    if (get().syncingPaid) return [];
     set({ syncingPaid: true });
     try {
       const results = await Promise.allSettled([
-        appApi("/api/meta/sync", { method: "POST", body: JSON.stringify({ days: 2 }) }),
+        appApi<MetaSyncResult>("/api/meta/sync", { method: "POST", body: JSON.stringify({ days: 14 }) }),
         // Optional connector: answers { skipped } when it isn't set up.
         appApi("/api/appstack/sync", { method: "POST", body: "{}" }),
       ]);
       await get().refresh();
       const failures = results.flatMap((r, i) => (r.status === "rejected" ? [`${["Meta", "AppStack"][i]}: ${r.reason instanceof Error ? r.reason.message : "sync failed"}`] : []));
       if (failures.length) throw new Error(failures.join("; "));
+      const autoOff = results[0].status === "fulfilled" ? results[0].value.autoOff : undefined;
+      if (autoOff?.errors.length) throw new Error(`Auto-off: ${autoOff.errors.join("; ")}`);
+      return autoOff?.paused ?? [];
     } finally {
       set({ syncingPaid: false });
     }
   },
 
-  syncMeta: async (days = 2) => {
+  saveAutoOff: async (change) => {
+    if (get().mode === "locked") throw new Error("locked");
+    const prev = get().snapshot;
+    set({ snapshot: { ...prev, autoOff: { ...prev.autoOff, ...change } } });
+    try {
+      await appApi("/api/auto-off", { method: "PUT", body: JSON.stringify(change) });
+    } catch (err) {
+      set({ snapshot: { ...get().snapshot, autoOff: prev.autoOff } });
+      throw err;
+    }
+  },
+
+  syncMeta: async (days = 14) => {
     if (get().mode === "locked") throw new Error("locked");
     const res = await appApi<MetaSyncResult>("/api/meta/sync", { method: "POST", body: JSON.stringify({ days }) });
     await get().refresh();
@@ -172,13 +190,19 @@ export const useHarness = create<HarnessState>((set, get) => ({
 
   metaControl: async (level, id, change) => {
     if (get().mode === "locked") throw new Error("locked");
-    await appApi("/api/meta/control", { method: "POST", body: JSON.stringify({ level, id, ...change }) });
+    const needsConfirmation = change.status === "ACTIVE" || change.dailyBudget != null;
+    if (!DEMO && needsConfirmation && !window.confirm(change.dailyBudget != null
+      ? `Set this ad set's daily budget to ${change.dailyBudget} in the ad account's currency? This changes the shared budget for its ads. Check Ads Manager before continuing.`
+      : `Activate this ${level} on Meta? It can spend the existing campaign/ad set budget once Meta approves it. Check the destination, audience and budget in Ads Manager first.`)) {
+      throw new Error("Action cancelled; nothing sent to Meta.");
+    }
+    await appApi("/api/meta/control", { method: "POST", body: JSON.stringify({ level, id, ...change, confirmed: needsConfirmation }) });
     await get().refresh();
   },
 
   promote: async (postId) => {
     if (get().mode === "locked") throw new Error("locked");
-    await appApi("/api/promote", { method: "POST", body: JSON.stringify({ postId }) });
+    await appApi("/api/promote", { method: "POST", body: JSON.stringify({ postId, confirmed: true }) });
     await get().refresh();
   },
 }));

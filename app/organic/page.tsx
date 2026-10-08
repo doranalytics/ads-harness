@@ -32,8 +32,8 @@ function BoostDialog({ post, onClose }: { post: Post | null; onClose: () => void
     setBusy(true);
     try {
       await promote(post.id);
-      toast.success("Running as an ad", {
-        description: "The post itself is the creative — its likes and comments carry over. It goes live once Meta approves it and shares the ad set's daily budget (set in Paid).",
+      toast.success("Paused ad created", {
+        description: "Open Paid → Paused to inspect it. Check the budget and audience in Ads Manager before choosing Resume. Creating this draft does not activate it.",
       });
       onClose();
     } catch (err) {
@@ -49,18 +49,18 @@ function BoostDialog({ post, onClose }: { post: Post | null; onClose: () => void
     <Dialog open={!!post} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-sm rounded-2xl">
         <DialogHeader>
-          <DialogTitle className="text-base">Promote to paid</DialogTitle>
+          <DialogTitle className="text-base">Create a paused ad</DialogTitle>
           <DialogDescription className="text-xs leading-relaxed">
             The existing Instagram post becomes the ad — no re-upload, so its likes and comments show on the ad and paid
-            engagement lands on the post. It joins your promote ad set (Settings → Meta Ads) and goes <strong>live as soon
-            as Meta approves it</strong>, sharing that ad set&apos;s daily budget. Budget is controlled on the ad set, in Paid.
+            engagement lands on the post. It joins your existing ad set (Settings → Meta Ads) <strong>paused</strong>.
+            Inspect it in Paid → Paused and Ads Manager. Resume requires a separate confirmation and can spend that ad set&apos;s budget.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <p className="line-clamp-2 text-xs text-muted-foreground">{post?.title}</p>
           <Button type="submit" disabled={busy} className="w-full gap-1.5">
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" />}
-            Run this post as an ad
+            Create paused ad
           </Button>
         </form>
       </DialogContent>

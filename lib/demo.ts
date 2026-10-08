@@ -117,11 +117,21 @@ export function demoSnapshot(connectors: Connector[]): Snapshot {
   campaign.adCount = ads.length;
   campaign.lifetimeSpend = +ads.reduce((t, a) => t + a.spend, 0).toFixed(2);
 
+  // The demo's auto-off: on at $9, and it turned one ad off six days ago.
+  const limit = 9;
+  const off = ads[5];
+  const judged = metaAdDays.filter((d) => d.adId === off.id && d.date >= day(-13) && d.date <= day(-7));
+  const offSpend = +judged.reduce((t, d) => t + d.spend, 0).toFixed(2);
+  const offCount = judged.reduce((t, d) => t + d.results, 0);
+
   const now = new Date().toISOString();
   return {
     metaAdDays, appstackReport: null, postsSyncedAt: now, adsSyncedAt: now,
     posts, campaigns: [campaign], ads, adsets,
     accounts: [{ id: "ig-yourbrand", platform: "instagram", handle: "yourbrand", label: "Your Brand", kind: "brand", followers, followersDelta7d: 180, sparkline: [] }],
     connectors: connectors.map((c) => ({ ...c, status: c.key === "appstack" ? "planned" : "wired", needs: c.key === "appstack" ? c.needs : "" })),
+    demo: true, metaWritesEnabled: false,
+    autoOff: { enabled: true, limit },
+    autoOffLog: [{ adId: off.id, adName: off.name, at: `${day(-6)}T07:15:00Z`, spend: offSpend, count: offCount, cost: offCount > 0 ? +(offSpend / offCount).toFixed(2) : null, limit }],
   };
 }

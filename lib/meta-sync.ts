@@ -5,7 +5,7 @@
 // Optional AppStack columns (installs / trials / purchases) are never
 // touched here. A field Meta omits stays NULL or 0 — nothing is invented.
 import { graph, readMetaCreds, type MetaCreds } from "@/lib/meta";
-import { supa, supaJson } from "@/lib/server";
+import { supa, supaJson, supaAll } from "@/lib/server";
 
 export class MetaSyncError extends Error {
   constructor(message: string, public readonly status: number) { super(message); }
@@ -54,6 +54,7 @@ async function all(creds: MetaCreds, path: string, params: Record<string, string
     const after = (res.paging as { cursors?: { after?: string }; next?: string } | undefined);
     next = after?.next && after.cursors?.after ? { path, params: { ...params, limit: params.limit ?? "200", after: after.cursors.after } } : null;
   }
+  if (next) throw new MetaSyncError("Meta paging exceeded the safe limit; sync stopped before judging incomplete data.", 502);
   return rows;
 }
 
@@ -78,7 +79,7 @@ async function noteConnector(patch: Json): Promise<void> {
   await supa("connectors?key=eq.meta-ads", { method: "PATCH", body: JSON.stringify(patch) }).catch(() => undefined);
 }
 
-export async function syncMeta(days = 3): Promise<MetaSyncReport> {
+export async function syncMeta(days = 14): Promise<MetaSyncReport> {
   const creds = await readMetaCreds();
   if (!creds) {
     await noteConnector({ needs: "Settings → Connector keys → Meta Ads: access token + ad account id (docs/meta-business-setup.md)" });
@@ -134,7 +135,7 @@ export async function syncMeta(days = 3): Promise<MetaSyncReport> {
       };
     }));
 
-    const existing = await supaJson<{ id: string; name: string; effective_status: string | null }[]>("ads?select=id,name,effective_status&channel=eq.meta&limit=2000");
+    const existing = await supaAll<{ id: string; name: string; effective_status: string | null }>("ads?select=id,name,effective_status&channel=eq.meta&order=id.asc");
     // Post ↔ ad link. A boosted ad's creative names the ORGANIC post as
     // source_instagram_media_id (its permalink points at Meta's ad copy, so
     // the shortcode route only works for non-boost creatives). Resolve by
@@ -173,6 +174,9 @@ export async function syncMeta(days = 3): Promise<MetaSyncReport> {
       const x = results(r);
       return { date: String(r.date_start), ad_id: String(r.ad_id), spend: num(r.spend), impressions: Math.round(num(r.impressions)), clicks: Math.round(num(r.clicks)), link_clicks: Math.round(num(r.inline_link_clicks)), results: x.results };
     });
+    // Reconcile late corrections. Failure aborts before automation can run.
+    const cleared = await supa(`daily_ad_metrics?date=gte.${from}&date=lte.${to}`, { method: "DELETE" });
+    if (!cleared.ok) throw new MetaSyncError("Could not reconcile daily reporting; automation skipped.", 502);
     await upsert("daily_ad_metrics", dailyRows, "date,ad_id");
 
     // Ads Meta no longer returns: keep the row, mark it archived.
@@ -181,6 +185,11 @@ export async function syncMeta(days = 3): Promise<MetaSyncReport> {
 
     const before = new Map(existing.map((e) => [e.id, e.effective_status]));
     const statusChanges = adRows.filter((a) => before.has(a.id) && before.get(a.id) !== a.effective_status).map((a) => ({ id: a.id, name: a.name, from: before.get(a.id) ?? null, to: a.effective_status }));
+    // Restarts in Ads Manager also receive a full new seven-day trial.
+    for (const change of statusChanges.filter((a) => a.to === "ACTIVE")) {
+      const restarted = await supa(`ads?id=eq.${change.id}`, { method: "PATCH", body: JSON.stringify({ auto_off_started_at: syncedAt }) });
+      if (!restarted.ok) throw new MetaSyncError("Apply migration 0003 before using auto-off; restart tracking failed.", 502);
+    }
 
     // Owned media ↔ posts. Stamps ig_media_id on every post Meta owns and
     // marks Instagram posts that are on the profile but NOT in the owned

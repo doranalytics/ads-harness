@@ -1,7 +1,8 @@
 import { metaInstallMetrics } from "@/lib/meta-installs";
-import { authorized, supaConfigured, supaJson } from "@/lib/server";
+import { reportingAuthorized, supaConfigured, supaJson, supaAll, metaWritesEnabled } from "@/lib/server";
 import { emptySnapshot, type Connector, type Snapshot } from "@/lib/types";
 import { DEMO, demoSnapshot } from "@/lib/demo";
+import { readAutoOff } from "@/lib/auto-off";
 import registry from "@/lib/generated/registry.json";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   // Demo mode: invented sample data, no password (lib/demo.ts).
   if (DEMO) return Response.json({ configured: true, snapshot: demoSnapshot((registry as { connectors: Connector[] }).connectors) });
-  if (!authorized(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!reportingAuthorized(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!supaConfigured()) return Response.json({ configured: false });
 
   try {
@@ -41,7 +42,7 @@ export async function GET(req: Request) {
       publisher_platforms: string[] | null; device_platforms: string[] | null; user_os: string[] | null; created_at: string | null;
     };
     type DailyAd = { date: string; ad_id: string; spend: number; impressions: number; clicks: number; link_clicks: number; results: number };
-    const [accounts, posts, postMetrics, acctMetrics, connectors, campaignRows, adRows, dailyAds, adsetRows, metaInsights, appstackCache, metaDailyRaw] = await Promise.all([
+    const [accounts, posts, postMetrics, acctMetrics, connectors, campaignRows, adRows, dailyAds, adsetRows, metaInsights, appstackCache, metaDailyRaw, autoOff] = await Promise.all([
       supaJson<{ id: string; platform: string; handle: string; label: string; kind: string }[]>("accounts?select=*&order=id"),
       // PostgREST caps each response at 1,000 rows. Page explicitly so older
       // posts aren't silently omitted.
@@ -59,12 +60,13 @@ export async function GET(req: Request) {
       ),
       supaJson<CampaignRow[]>("campaigns?select=*&order=created_at.desc&limit=200"),
       supaJson<AdRow[]>("ads?select=*&order=spend.desc&limit=500"),
-      supaJson<DailyAd[]>("daily_ad_metrics?select=*&order=date.desc&limit=6000"),
+      supaAll<DailyAd>("daily_ad_metrics?select=*&order=date.desc,ad_id.asc"),
       supaJson<AdSetRow[]>("adsets?select=*&order=name&limit=500"),
       supaJson<{ entity_id: string; pulled_at: string; payload: Record<string, unknown> }[]>("meta_raw?select=entity_id,pulled_at,payload&level=eq.insight&order=pulled_at.desc&limit=1000"),
       // Optional: only filled when the AppStack connector is wired.
       supaJson<{ payload: Snapshot["appstackReport"] }[]>("appstack_cache?id=eq.default&select=payload"),
       supaJson<{ entity_id: string; pulled_at: string; payload: Record<string, unknown> }[]>("meta_daily_insights?select=entity_id,pulled_at,payload&order=pulled_at.desc&limit=6000"),
+      readAutoOff(),
     ]);
 
     const rawDaily = new Map(metaDailyRaw.map((r) => [r.entity_id, r]));
@@ -215,6 +217,9 @@ export async function GET(req: Request) {
         };
       }),
       connectors: connectors.map((c) => ({ ...c, status: c.status as Snapshot["connectors"][number]["status"] })),
+      metaWritesEnabled: metaWritesEnabled(),
+      autoOff: autoOff.rule,
+      autoOffLog: autoOff.log,
     };
 
     return Response.json({ configured: true, snapshot });

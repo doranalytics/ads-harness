@@ -44,6 +44,8 @@ next-env.d.ts
 
 # verification artifacts
 verify/
+.business-profile.local.json
+.mcp.private.env
 
 
 # compiled from data/*.yml on dev/build

@@ -1,187 +1,99 @@
-# ads harness — Instagram → Meta ads, one feed
+# Ads harness · How to AI 301
 
-A small web app for running a business's Instagram and its Meta ads from one
-place:
+Your Instagram posts and Meta ad performance in one place. A public teaching starter extracted from Brian Doran's Oasis harness, with a credential-free demo and optional connections for your own business.
 
-- **Organic** — your Instagram posts as a grid: cover, views, likes,
-  comments, engagement. Every post has a **Promote to paid** button that runs
-  that exact post as a Meta ad. No re-upload, so its likes and comments carry
-  over. Once a post is running you see its spend, cost per result and a
-  14-day cost trend right on the card, and can sort the feed by them.
-- **Paid** — your Meta ad account: campaign → ad set → ad, with spend,
-  CPM, CTR, results and **cost per result** for any date range. Each ad shows a
-  7-day cost line with an alert line you set: days over it turn red. You can
-  pause or resume any campaign, ad set or ad, and set ad set budgets, without
-  opening Ads Manager.
-- **Connectors** — whether each data source is live, with a Sync button.
-- **Settings** — your Instagram handle and the keys for each connector.
+**[Class recipe](https://ai301-ads-recipe.vercel.app)** · **[Try the demo](https://ads-harness.vercel.app)** · **[Class talking framework](docs/class-talking-framework.md)**
 
-It's a Next.js app on **Vercel** with its data in **Supabase**. There is no
-server of your own to run: Vercel Cron runs the daily syncs, and every
-button calls Meta or Apify directly from the app's API routes.
+## Fastest start: deploy a demo in your browser
 
-## See it first: the demo
+[![Deploy demo with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdoranalytics%2Fads-harness&project-name=my-ads-harness&repository-name=my-ads-harness&env=NEXT_PUBLIC_DEMO&envDefaults=%7B%22NEXT_PUBLIC_DEMO%22%3A%221%22%7D&envDescription=Keep%20NEXT_PUBLIC_DEMO%3D1%20for%20the%20credential-free%20class%20demo&envLink=https%3A%2F%2Fgithub.com%2Fdoranalytics%2Fads-harness%23live-data-optional)
 
-Set one environment variable, `NEXT_PUBLIC_DEMO=1`, and the app runs with no
-password and an invented coffee-roaster account: posts, ads, costs and red
-alert days. Nothing is sent anywhere, and a **demo · sample data** badge stays
-in the header. To put it online, import the repo in Vercel (**Add New →
-Project**), add `NEXT_PUBLIC_DEMO` = `1`, and deploy. No other setup needed.
-Locally: `NEXT_PUBLIC_DEMO=1 npm run dev`.
+Sign into GitHub and Vercel. The flow creates your own repository and Vercel project. Keep `NEXT_PUBLIC_DEMO=1` and deploy. No database, Meta or Apify account is needed. Demo data is invented and visibly badged. Every live API action is blocked in demo mode, even if credentials were accidentally configured.
 
-For a real deployment, leave `NEXT_PUBLIC_DEMO` unset.
+Alternatively: **Use this template → Create a new repository**, then Vercel → **Add New → Project → Import Git Repository**, add `NEXT_PUBLIC_DEMO=1`, and deploy. Choose your own team/account. The demo badge should be visible on the finished URL.
 
-## What you need
+## Run locally
 
-| | What for | Cost |
-|---|---|---|
-| **Vercel** account | hosts the app, runs the daily syncs | free plan works |
-| **Supabase** project | the database | free plan works |
-| **Apify** account | reads your public Instagram posts and numbers (the Organic tab) | pay per result; the free monthly credit covers light use |
-| **Meta Business** setup | the Paid tab and the Promote button | your ad spend |
+Install [Node.js](https://nodejs.org) 22.13 or newer, then:
 
-**You do not need to log in to Instagram through the app.** The Organic tab
-reads your public profile through Apify, the way a visitor would. That's why
-it has views for reels but not for image or carousel posts, and no reach or
-saves: Instagram doesn't make those public.
-
-**Meta:** the Paid tab and Promote use a System User token from your Meta
-Business account. Meta asks you to pick an app when you create that token,
-so you'll make one basic app along the way. It takes two minutes, needs no
-review, and you never touch it again.
-[docs/meta-business-setup.md](docs/meta-business-setup.md) walks through it
-step by step.
-
-**AppStack** (`lib/appstack.ts`) is optional and only for businesses
-promoting a **mobile app**. With it connected, the Paid tab leads with cost
-per install and cost per trial instead of cost per result. Otherwise ignore
-it: nothing runs until it has keys.
-
-## Set it up (about 30 minutes)
-
-### 1. Supabase
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. **SQL Editor → New query**, paste all of
-   [`supabase/migrations/0001_schema.sql`](supabase/migrations/0001_schema.sql), **Run**.
-3. **Project Settings → API**: copy the **Project URL** and the
-   **service_role** (secret) key for step 2.
-
-### 2. Vercel
-
-1. Push this repo to your GitHub, then **Add New → Project** in Vercel and
-   import it.
-2. Before deploying, add the environment variables from
-   [`.env.example`](.env.example): the five **required** ones
-   (`APP_PASSWORD`, `SESSION_TOKEN`, `SUPABASE_URL`,
-   `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`), plus `NEXT_PUBLIC_BRAND_NAME`
-   if you want your name on it.
-3. Deploy. Open the site and sign in with `APP_PASSWORD`.
-
-### 3. Your Instagram account
-
-**Settings → Accounts → Add account**: platform Instagram, your handle
-without the @, then **Save roster**. The account has to be public.
-
-### 4. Apify (the Organic tab)
-
-1. Sign up at [apify.com](https://apify.com), then **Settings → API &
-   Integrations** and copy your **Personal API token**.
-2. In the app: **Settings → Connector keys → Apify**, paste it, **Save**.
-3. **Connectors → Apify → Sync posts + followers.** The first run takes a
-   minute or two. After that it runs on its own every morning.
-
-Each sync reads the latest 50 posts per account (`POSTS_PER_CHANNEL` in
-`lib/apify.ts`). Apify charges per result, so lower that number to spend
-less.
-
-### 5. Meta (the Paid tab and Promote)
-
-Follow [docs/meta-business-setup.md](docs/meta-business-setup.md). At the end
-you paste six things into **Settings → Connector keys → Meta Ads**:
-
-| Field | What it is |
-|---|---|
-| Access token | the System User token |
-| Ad account id | `act_…` |
-| Promote ad set id | the ad set every Promote lands in; it holds the budget |
-| Facebook Page id | the Page your Instagram is connected to |
-| Ad link | where the ad sends people: your site, shop or booking page |
-| Button | the call-to-action: `LEARN_MORE`, `SHOP_NOW`, `SIGN_UP`, `BOOK_NOW`… |
-
-Then **Connectors → Meta Ads → Sync now**. The Paid tab fills in, and
-**Promote to paid** works on every post.
-
-## How Promote works
-
-Pressing **Promote to paid** on a post:
-
-1. finds the post's media id in your Instagram account through Meta,
-2. creates an ad creative from **that existing post**, with your link and
-   button,
-3. creates the ad **live** in your promote ad set. It starts once Meta
-   approves it (usually minutes), and shares the ad set's daily budget.
-
-Collabs authored by another account, and posts using licensed music, can't
-run as ads. The card then says **Not promotable** and why.
-
-## What "cost per result" means
-
-Meta counts one **result** per conversion of whatever your ad set optimises
-for: a purchase, a lead, a sign-up. The app takes the first of these that
-Meta reports for an ad:
-
-purchase → lead → complete registration → app install → link click
-
-That order is `RESULT_ORDER` in `lib/meta-sync.ts`; reorder it if your
-business counts something else first. **Cost per result = Meta spend ÷
-results.** For it to mean "cost per sale", the ad set has to optimise for
-purchases and your site needs the Meta pixel (see the setup doc).
-
-## Syncs
-
-| | When | Route |
-|---|---|---|
-| Meta | daily 07:15 UTC + **Sync now** | `/api/meta/sync` |
-| Apify | daily 07:00 UTC + Connectors → Sync | `/api/apify/sync` |
-| AppStack (optional) | daily 07:25 UTC; skips itself if not set up | `/api/appstack/sync` |
-
-The schedules are in `vercel.json`. Vercel's free plan allows one run per
-day per job; on Pro you can make Meta hourly (`"15 * * * *"`).
-
-## Develop locally
-
-```
-npm install
-cp .env.example .env.local   # fill in the required values
-npm run dev                  # http://localhost:3000
+```sh
+git clone https://github.com/doranalytics/ads-harness.git
+cd ads-harness
+npm ci
+npm run demo
 ```
 
-`npm run assets` redraws the icons and share card. Change the colour in
-`scripts/make-icons.mjs` and `--primary` in `app/globals.css`.
+Open http://localhost:3000. If that port is busy, `npm run demo -- --port 3001`.
 
-## Layout
+You can also clone your template copy with GitHub Desktop or use **Code → Download ZIP**, unzip, open that folder in your coding assistant, and run the last two commands. No Docker or Vercel CLI is needed.
 
+`npm run demo` always forces sample mode and disables live ad actions. For your own name, copy `.env.example` to the ignored `.env.local` and set `NEXT_PUBLIC_BRAND_NAME`. Restart after changing public environment variables.
+
+## Use Codex or Claude Code chat
+
+The **[custom Ads Harness MCP](docs/mcp-setup.md)** exposes read-only organic posts, paid metrics, campaign summaries and chart-ready time series. It runs locally over stdio and needs no credential for the demo. It is not Meta's official MCP server. Live reporting uses a separate read-only token only after your explicit consent; no credential is generated by installation. It exposes no mutation, sync or paid-scraper tools.
+
+The full recipe includes a short business interview: offering/markets, goal and actual tracked events, campaign types, currency/budget and success measures. Confirm a metric/dashboard plan, save nonsecret planning inputs in an ignored local profile, then ask the assistant to build charts from comparable events and attribution windows. Missing tracking, revenue and unknown targets stay visible. The interview never launches campaigns or changes spend.
+
+## What it does
+
+- **Organic:** the latest public posts, views/likes/comments when available, follower counts and links to the paid side.
+- **Paid:** campaign → ad set → ad hierarchy, spend, recognized results and cost per result, with reporting-only Sync.
+- **Optional ad actions:** eligible owned Instagram post → paused ad draft in an existing ad set. Activation and budget changes require confirmation and an explicit server opt-in.
+- **Optional auto-off:** a separate saved rule can pause mature active ads when the recent seven-day cost exceeds your chosen limit. It starts off.
+- **Connectors/Settings:** account roster and write-only credential forms. AppStack attribution is optional for mobile apps; leave it unconnected for this class.
+
+It does not create campaigns/ad sets, upload new creative, set audiences, install a pixel, or promise profitable ads. Public Instagram counts cannot fully separate organic and paid engagement.
+
+## Live data (optional)
+
+Follow the [complete build recipe](docs/build-recipe.md) and [Meta setup checklist](docs/meta-business-setup.md). Use your own projects and owned business assets. The app uses a shared owner password, not individual user logins or advertiser OAuth onboarding.
+
+1. Create your own Supabase project. Run **[supabase/setup.sql](supabase/setup.sql)** once in its SQL Editor for a fresh database. Existing harness databases apply only missing numbered migrations.
+2. Add these server-only variables in Vercel **Settings → Environment Variables**, or an ignored `.env.local` for local live development:
+
+| Name | Purpose |
+| --- | --- |
+| `APP_PASSWORD` | Strong owner password |
+| `SESSION_TOKEN` | Independent random secret, at least 32 bytes |
+| `SUPABASE_URL` | Your project's URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | New `sb_secret_…` key or legacy service_role JWT; never anon/publishable |
+| `CRON_SECRET` | Another independent random secret, at least 32 bytes |
+| `META_WRITES_ENABLED` | Keep `0` for reporting; `1` explicitly enables ad actions |
+
+3. Remove `NEXT_PUBLIC_DEMO` or set `0`, then **redeploy**. Public flags are build-time settings. For local live use, run `npm run dev`, not `npm run demo`. Confirm the password screen and empty states.
+4. Add your public Instagram handle in Settings and your Apify API token in **Connector keys → Apify**. Press **Connectors → Apify → Sync now** only after checking actor costs. The two Instagram actors request profile data and the latest 50 posts per channel. No Instagram login is needed for this public scrape.
+5. For Meta reporting, enter a System User access token and ad account ID in **Connector keys → Meta Ads**. Meta's System User token issuance requires selecting a Meta app connected to your business. This harness calls Graph/Marketing API directly, not Meta MCP, and needs no `META_APP_ID`/`META_APP_SECRET` env pair. [The checklist](docs/meta-business-setup.md) explains assets, permission scope and review caveats.
+
+Secrets never go in source, chat, screenshots or NEXT_PUBLIC variables. Connector tokens are stored in Supabase server-side, never read back by the app. Supabase's service key bypasses RLS. Copied public post thumbnails use a public covers bucket.
+
+Optional fallbacks are listed in `.env.example`. The default `META_GRAPH_VERSION` is `v26.0`; keep it aligned with a supported Meta Marketing API version. The display uses dollar formatting and the budget control assumes two decimal minor units; verify your ad account's currency before using live budgets.
+
+## Paused drafts, confirmed actions and daily automation
+
+Live Meta actions require **`META_WRITES_ENABLED=1`**. Until then, reporting works and the server rejects creation, activation, budget changes and enabling auto-off.
+
+Configure your existing ad set ID, linked Page ID, destination and CTA in Settings. In Organic, **Promote → Create paused ad** creates a PAUSED draft from an eligible post you own. Inspect it in **Paid → Paused** and Ads Manager. **Resume** requests confirmation and may spend the existing campaign/ad set budget. Changing a budget requests confirmation too. Parent status, eligibility and Meta review still control delivery.
+
+Auto-off requires the deployment write gate **and** a separately enabled saved rule in Paid with a positive limit. After an ad's first seven days, the daily `/api/automation` job refreshes 14 days of Meta data and judges the last seven complete UTC dates. It pauses when total spend ÷ recognized results exceeds the limit, or when there are no results and total spend exceeds the limit. No spend means no judgment. An observed restart receives seven new days; stale/missing data and incomplete optional attribution skip unsafe judgments. Pauses are logged.
+
+**Manual Sync never runs auto-off or changes Meta status/budget.** Turning the saved rule off stops future automated pauses. `META_WRITES_ENABLED=0` blocks all Meta actions. Daily automation is not a real-time spend cap; use Ads Manager's own controls.
+
+Vercel cron schedules: Apify around 07:00 UTC, Meta reporting/optional automation around 07:15, optional AppStack around 07:25. Hobby jobs may run within the hour rather than the exact minute. Choose a hosting plan permitted for your use; [Hobby is personal/non-commercial](https://vercel.com/docs/plans/hobby). Apify actors and real ads can incur charges.
+
+## Check changes
+
+```sh
+npm run lint
+npm run check
+npm test
+npm run build
 ```
-app/organic, app/paid, app/connectors, app/settings   the four screens
-app/api/*            server routes: data, promote, meta/sync, meta/control,
-                     apify/sync, appstack/sync, accounts, connector-keys, unlock
-lib/meta.ts          Meta Graph calls + where the Meta settings are read
-lib/meta-sync.ts     Meta → Supabase sync
-lib/apify.ts         Apify scrapes → Supabase
-lib/cost.ts          cost per result / per install, per day
-lib/types.ts         the Snapshot shape every screen reads
-supabase/migrations  the schema
-docs/                setup guides
-```
 
-## Safety
+Tests are offline and mock provider calls. They verify demo isolation, disabled-by-default writes, paused creation, confirmation, read-only Sync, seven-day limits, restart/freshness checks and honest error reporting. They do not prove that any real Meta or Apify account is connected. Browser-check desktop and 375px phone layouts and inspect for secrets before committing.
 
-- One password at the door. Nothing is visible without it.
-- Keys you save in Settings go straight to Supabase (`connector_secrets`),
-  readable only with the service role key, and are never sent back to a
-  browser.
-- Row-level security is on for every table with no public policies. The
-  browser never talks to Supabase directly; only the app's server routes do.
-- Promote creates **live** ads that spend from the ad set's budget. Keep that
-  budget at a level you're comfortable with.
+`npm run schema` regenerates the fresh-database SQL bundle. `npm run registry` compiles the initial account/connector registry from `data/*.yml`. `AGENTS.md` gives coding assistants the project's rules.
+
+## Ownership and source
+
+This public generic starter comes from Brian's Oasis harness. The separate private Oasis project, attribution engine, business data and credentials are not part of this repository. The October 2026 teaching changes preserve the organic → paid workflow while making demo installation and live-action boundaries explicit. MIT licensed; dependency notices are in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

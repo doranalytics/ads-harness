@@ -1,19 +1,20 @@
-import { authorized, supa, supaConfigured, supaJson } from "@/lib/server";
+import { authorized, supa, supaConfigured, supaJson, metaWritesEnabled, META_WRITES_DISABLED } from "@/lib/server";
 import { createPostAd, findMediaId, readMetaCreds, readPromoteConfig, recordBoost, resolveIgIdentity } from "@/lib/meta";
 
 export const maxDuration = 120;
 
 /**
  * Promote: run an organic Instagram post as an ad. The post itself is the
- * creative (its likes/comments carry over, paid engagement flows back to
- * it); the ad joins your promote ad set ACTIVE, so it runs as soon as Meta
- * approves it. Budget stays on the ad set.
+ * creative); the ad joins an existing ad set PAUSED. Activation and its
+ * spending consequences are confirmed separately. Budget stays on the ad set.
  */
 export async function POST(req: Request) {
   if (!authorized(req)) return Response.json({ error: "unauthorized" }, { status: 401 });
+  if (!metaWritesEnabled()) return Response.json({ error: META_WRITES_DISABLED }, { status: 403 });
   if (!supaConfigured()) return Response.json({ error: "supabase not configured" }, { status: 500 });
 
-  const { postId } = (await req.json().catch(() => ({}))) as { postId?: string };
+  const { postId, confirmed } = (await req.json().catch(() => ({}))) as { postId?: string; confirmed?: boolean };
+  if (confirmed !== true) return Response.json({ error: "Confirm paused ad creation first." }, { status: 400 });
   if (!postId) return Response.json({ error: "postId required" }, { status: 400 });
 
   const creds = await readMetaCreds();

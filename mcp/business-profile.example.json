@@ -1,0 +1,16 @@
+{
+  "business": "Example coffee roaster — invented class profile",
+  "offering": "Coffee subscriptions and bags",
+  "objective": "purchases",
+  "targetMarkets": ["Markets described by the business owner"],
+  "trackedEvents": [],
+  "trackingReady": "unknown",
+  "campaignTypes": ["Existing-post sales test, subject to tracking readiness"],
+  "currency": "USD",
+  "dailyBudget": null,
+  "primaryMetric": "Cost per tracked purchase, only after Purchase is verified",
+  "targetCpa": null,
+  "targetRoas": null,
+  "attributionWindow": "Unknown — confirm in Ads Manager",
+  "notes": "No audience, target or performance is inferred. This file does not launch or change campaigns."
+}

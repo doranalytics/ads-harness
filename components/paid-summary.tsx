@@ -62,7 +62,7 @@ export function PaidSummary({ metrics, range, setRange, preset, setPreset, minDa
     </DialogContent></Dialog>
     <Dialog open={infoOpen} onOpenChange={setInfoOpen}><DialogContent><DialogTitle>About these metrics</DialogTitle><DialogDescription>{range.from} – {range.to}. Current ad, campaign and status filters apply throughout.</DialogDescription>
       <div className="space-y-3 text-xs leading-relaxed text-muted-foreground">
-        <p>Spend, CPM, CTR and results come from Meta’s daily reports. A “result” is the event each ad set optimises for — a purchase, lead or sign-up — as Meta counts it.</p>
+        <p>Spend, CPM, CTR and results come from Meta’s daily reports. The harness picks the first recognized action: purchase, lead, registration, install, then link click. Check the result label and Ads Manager before comparing ads with different objectives.</p>
         <p>{L.long} is the headline: {L.formula}, for these same ads and dates.</p>
         {app && <p>With AppStack connected, cost per trial is AppStack spend ÷ AppStack START_TRIAL events, and Event ROAS is AppStack PURCHASE event value ÷ AppStack spend (reported event value, not verified cash).</p>}
         <p>Today, Yesterday and quick ranges select calendar dates in your local timezone. Data for those dates follows Meta’s reporting day (your ad account’s timezone). Missing data or a zero denominator displays a dash. Meta syncs daily at 07:15 UTC and whenever you press Sync now.</p>

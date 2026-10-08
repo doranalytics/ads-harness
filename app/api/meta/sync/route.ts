@@ -9,6 +9,7 @@ async function run(req: Request, days: number) {
   if (!supaConfigured()) return Response.json({ error: "supabase not configured" }, { status: 500 });
   try {
     const report = await syncMeta(days);
+    // Reporting only. Automation has its own explicitly enabled cron route.
     return Response.json({ ok: true, ...report });
   } catch (error) {
     const status = error instanceof MetaSyncError ? error.status : 502;
@@ -17,13 +18,13 @@ async function run(req: Request, days: number) {
 }
 
 export async function GET(req: Request) {
-  const days = Number(new URL(req.url).searchParams.get("days") ?? 3);
-  return run(req, Number.isFinite(days) ? days : 3);
+  const days = Number(new URL(req.url).searchParams.get("days") ?? 14);
+  return run(req, Number.isFinite(days) ? days : 14);
 }
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { days?: number };
   const q = Number(new URL(req.url).searchParams.get("days"));
-  const days = Number.isFinite(body.days) ? Number(body.days) : Number.isFinite(q) && q > 0 ? q : 3;
+  const days = Number.isFinite(body.days) ? Number(body.days) : Number.isFinite(q) && q > 0 ? q : 14;
   return run(req, days);
 }

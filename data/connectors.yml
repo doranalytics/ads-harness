@@ -11,8 +11,9 @@ connectors:
     summary: >-
       Meta Marketing API, called straight from the app with a System User
       token from your Meta Business account. Syncs campaigns, ad sets, ads,
-      spend and results daily (and on Sync now); the Promote button runs an Instagram
-      post as an ad in the ad set you choose.
+      spend and results daily (and on Sync now). With live actions enabled,
+      Promote creates a paused ad from an eligible owned Instagram post
+      in your existing ad set; activation requires confirmation.
     unlocks: the Paid tab, Promote to paid, pause/resume and budgets
     needs: >-
       Settings → Connector keys → Meta Ads: access token, ad account id,

@@ -7,6 +7,7 @@ import { timingSafeEqual } from "node:crypto";
  * the JS bundle.
  */
 export async function POST(req: Request) {
+  if (process.env.NEXT_PUBLIC_DEMO === "1") return Response.json({ error: "The demo has no live session." }, { status: 409 });
   const { password } = (await req.json().catch(() => ({}))) as { password?: string };
   const expected = process.env.APP_PASSWORD;
   const token = process.env.SESSION_TOKEN;

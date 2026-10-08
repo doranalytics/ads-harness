@@ -1,7 +1,7 @@
 // The headline paid number, per day and per ad.
 //
 // Without AppStack (most businesses): cost per result = Meta spend ÷ Meta
-// results, where "results" is the event the ad set optimises for —
+// results, where "results" is the first recognized action type reported —
 // purchases, leads, sign-ups (see RESULT_ORDER in lib/meta-sync.ts).
 // With AppStack wired (promoting a mobile app): cost per install = AppStack
 // spend ÷ AppStack installs, and Meta's own install counts are ignored.
@@ -22,7 +22,7 @@ export const costSource = (s: Pick<Snapshot, "appstackReport">): CostSource => (
 
 /** Labels for whichever number is the headline. */
 export const COST_LABEL: Record<CostSource, { short: string; long: string; unit: string; formula: string }> = {
-  meta: { short: "Cost/result", long: "Cost per result", unit: "results", formula: "Meta spend ÷ Meta results (the event each ad set optimises for)" },
+  meta: { short: "Cost/result", long: "Cost per result", unit: "results", formula: "Meta spend ÷ first recognized reported action (purchase, lead, registration, install, then link click)" },
   appstack: { short: "CPI", long: "AppStack CPI", unit: "installs", formula: "AppStack spend ÷ AppStack installs" },
 };
 
@@ -63,3 +63,18 @@ export function costByDay(s: Pick<Snapshot, "appstackReport" | "metaAdDays">, ad
 
 /** Over the alert line: a cost above it, or spend past it with nothing to show. */
 export const overAlert = (d: CostDay, alert: number) => (d.cost != null ? d.cost > alert : d.spend > alert);
+
+/** How long an ad runs before auto-off judges it, and the window it is judged on. */
+export const CYCLE_DAYS = 7;
+
+/** The whole window as one number: total spend ÷ total count. */
+export function cycleCost(days: CostDay[]): { spend: number; count: number; cost: number | null } {
+  const spend = days.reduce((t, d) => t + d.spend, 0);
+  const count = days.reduce((t, d) => t + d.count, 0);
+  return { spend, count, cost: count > 0 ? spend / count : null };
+}
+
+/** Auto-off's test, same reading as overAlert: a cost above the limit, or
+ * spend past it with nothing to show. No spend is nothing to judge. */
+export const overCycle = (c: { spend: number; cost: number | null }, limit: number) =>
+  c.spend > 0 && (c.cost != null ? c.cost > limit : c.spend > limit);

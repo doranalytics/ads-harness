@@ -1,4 +1,5 @@
 // Post covers, copied into the public `covers` Supabase bucket.
+import { supaHeaders } from "./server";
 
 const bucketUrl = (code: string, prefix = "ig") =>
   `${process.env.SUPABASE_URL!.replace(/\/$/, "")}/storage/v1/object/public/covers/${prefix}/${code}.jpg`;
@@ -15,12 +16,10 @@ export async function storeCover(code: string, src: string, prefix = "ig"): Prom
     if (!img.ok) return null;
     const body = Buffer.from(await img.arrayBuffer());
     const url = `${process.env.SUPABASE_URL!.replace(/\/$/, "")}/storage/v1/object/covers/${prefix}/${code}.jpg`;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const put = await fetch(url, {
       method: "POST",
       headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
+        ...supaHeaders(),
         "Content-Type": "image/jpeg",
         "x-upsert": "true",
       },

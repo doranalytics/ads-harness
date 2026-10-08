@@ -14,7 +14,8 @@
 // Setup walkthrough: docs/meta-business-setup.md.
 import { supa, supaJson } from "@/lib/server";
 
-const GRAPH = "https://graph.facebook.com/v21.0";
+const version = process.env.META_GRAPH_VERSION?.trim() || "v26.0";
+const GRAPH = `https://graph.facebook.com/${/^v\d+\.\d+$/.test(version) ? version : "v26.0"}`;
 
 type MetaFields = { access_token?: string; ad_account_id?: string; adset_id?: string; page_id?: string; link?: string; cta?: string };
 
@@ -140,10 +141,8 @@ export async function findMediaId(creds: MetaCreds, igUserId: string, shortcode:
 export interface BoostResult { creativeId: string; adId: string }
 
 /**
- * ONE creative from the existing Instagram post, ONE LIVE ad in the promote
- * ad set. Live, not paused: the ad set already owns the budget, so the new
- * ad shares it from the moment Meta approves it. Never re-uploads the video —
- * that would mint a new media object with zero likes and comments.
+ * One creative from the existing Instagram post and one PAUSED ad in the
+ * configured, existing ad set. Activation is a separate confirmed action.
  */
 export async function createPostAd(creds: MetaCreds, cfg: PromoteConfig, id: IgIdentity, mediaId: string, name: string): Promise<BoostResult> {
   const creative = await graph(creds.token, `${creds.adAccount}/adcreatives`, {
@@ -163,7 +162,7 @@ export async function createPostAd(creds: MetaCreds, cfg: PromoteConfig, id: IgI
       name,
       adset_id: cfg.adsetId,
       creative: JSON.stringify({ creative_id: creativeId }),
-      status: "ACTIVE",
+      status: "PAUSED",
     },
   });
   return { creativeId, adId: String(ad.id) };
@@ -173,7 +172,7 @@ export async function createPostAd(creds: MetaCreds, cfg: PromoteConfig, id: IgI
 export async function recordBoost(creds: MetaCreds, cfg: PromoteConfig, postId: string, adId: string, name: string): Promise<void> {
   // The ad set knows its name; ask rather than configure it twice. The
   // campaign link fills in on the next sync.
-  const set = await graph(creds.token, cfg.adsetId, { params: { fields: "name" } }).catch(() => ({} as Json));
+  const set = await graph(creds.token, cfg.adsetId, { params: { fields: "name,campaign_id" } }).catch(() => ({} as Json));
   const up = await supa("ads?on_conflict=id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
@@ -181,10 +180,11 @@ export async function recordBoost(creds: MetaCreds, cfg: PromoteConfig, postId: 
       id: adId,
       channel: "meta",
       adset_id: cfg.adsetId,
+      campaign_id: set.campaign_id ? String(set.campaign_id) : null,
       adset_name: set.name ? String(set.name) : null,
       name,
-      status: "ACTIVE",
-      effective_status: "PENDING_REVIEW",
+      status: "PAUSED",
+      effective_status: "PAUSED",
       source_post_id: postId,
       created_at: new Date().toISOString(),
       synced_at: new Date().toISOString(),

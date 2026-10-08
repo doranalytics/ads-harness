@@ -184,10 +184,26 @@ export interface MetaAdDay {
   metaInstalls: number | null; metaInstallSpend: number | null;
 }
 
+/** Auto-off (lib/auto-off.ts): after an ad's first 7 days, the daily Meta
+ * sync pauses it when its 7-day cost is over `limit`. `limit` is also the
+ * alert line on the Paid tab. */
+export interface AutoOffRule { enabled: boolean; limit: number | null }
+
+/** One ad the rule paused, with the 7-day numbers it was judged on. */
+export interface AutoOffEvent {
+  adId: string; adName: string; at: string;
+  spend: number; count: number;
+  /** null when there were no results to divide by */
+  cost: number | null;
+  limit: number;
+}
+
 /** The one payload every surface reads — served from Supabase through
  * app/api/data. Empty arrays until a sync has landed something; the app
  * never invents a number to fill the gap. */
 export interface Snapshot {
+  demo: boolean;
+  metaWritesEnabled: boolean;
   metaAdDays: MetaAdDay[];
   /** null unless the optional AppStack connector is wired */
   appstackReport: AppStackReport | null;
@@ -201,12 +217,17 @@ export interface Snapshot {
   adsets: AdSet[];
   accounts: Account[];
   connectors: Connector[];
+  autoOff: AutoOffRule;
+  /** newest first */
+  autoOffLog: AutoOffEvent[];
 }
 
 export const PLATFORMS: Platform[] = ["instagram", "tiktok", "x", "youtube", "facebook"];
 
 export function emptySnapshot(accounts: Account[] = [], connectors: Connector[] = []): Snapshot {
   return {
+    demo: false,
+    metaWritesEnabled: false,
     metaAdDays: [],
     appstackReport: null,
     postsSyncedAt: null,
@@ -217,6 +238,8 @@ export function emptySnapshot(accounts: Account[] = [], connectors: Connector[] 
     adsets: [],
     accounts,
     connectors,
+    autoOff: { enabled: false, limit: null },
+    autoOffLog: [],
   };
 }
 

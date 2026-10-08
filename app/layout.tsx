@@ -25,7 +25,7 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: `${APP_NAME} — instagram → ads, one feed`,
   description:
-    "Your Instagram feed with views and engagement per post, a Promote button that runs any post as a Meta ad, and the Meta campaign's spend and cost per result in one place.",
+    "Your Instagram feed, paused ad drafts from eligible owned posts, and Meta spend and cost per result in one place. Live ad actions require an explicit opt-in.",
   applicationName: APP_NAME,
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: APP_NAME },
@@ -35,11 +35,10 @@ export const viewport: Viewport = {
   themeColor: "#406cb8",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${orbitron.variable} h-full antialiased`}>
       <body className="min-h-dvh flex flex-col bg-background">

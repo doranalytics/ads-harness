@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, Loader2, Pause, Play, RefreshCw, Search } fr
 import { PaidSummary, type PaidPreset } from "@/components/paid-summary";
 import { RoasChart, type RoasDay, type RoasMetric } from "@/components/roas-chart";
 import { PaidAds } from "@/components/paid-ads";
-import { COST_LABEL, costByDay, costSource } from "@/lib/cost";
+import { COST_LABEL, CYCLE_DAYS, costByDay, costSource } from "@/lib/cost";
 import { DEMO } from "@/lib/demo";
 import { adPeriodMetrics, dayOffset, sumPaidMetrics, type PaidRange } from "@/lib/paid-report";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { fmtMoney } from "@/components/charts";
 import { useHarness } from "@/lib/store";
-import { Ad, AdSet } from "@/lib/types";
+import { Ad, AdSet, AutoOffEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
@@ -55,7 +55,7 @@ function adsetParams(sets: { publisherPlatforms: string[] | null; userOs: string
 }
 
 export default function PaidPage() {
-  const { hydrated, snapshot, syncPaid, syncingPaid, metaControl } = useHarness();
+  const { hydrated, snapshot, syncPaid, syncingPaid, metaControl, saveAutoOff } = useHarness();
   // Opens on the last 7 full days. "All time" runs from the first day the
   // data covers.
   const [preset, setPreset] = useState<PaidPreset>("7");
@@ -73,22 +73,50 @@ export default function PaidPage() {
   const source = costSource(snapshot);
   const L = COST_LABEL[source];
   const costDays = useMemo(() => new Map(snapshot.ads.map((a) => [a.id, costByDay(snapshot, new Set([a.id]), 7)])), [snapshot]);
-  // The cost line an ad gets flagged over. Per browser; edit it in the
-  // toolbar. Empty (no alert) until someone sets one.
-  const startAlert = DEMO ? 9 : null; // the demo shows the red days
-  const [costAlert, setCostAlertState] = useState<number | null>(() => {
-    if (typeof window === "undefined") return startAlert;
+  // The cost line: days over it turn red, and it is the limit auto-off
+  // pauses on. Saved with the rule (Supabase); a line set in this browser
+  // before the rule existed still shows until one is saved.
+  const rule = snapshot.autoOff;
+  const [stored] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
       const v = window.localStorage.getItem("harness.costAlert");
-      return v == null ? startAlert : v ? Number(v) : null;
+      return v ? Number(v) : null;
     } catch {
-      return startAlert;
+      return null;
     }
   });
+  const [edited, setEdited] = useState<number | null | undefined>(undefined);
+  const costAlert = edited !== undefined ? edited : rule.limit ?? stored;
   const setCostAlert = (v: number | null) => {
-    setCostAlertState(v);
+    if (v === costAlert) return;
+    setEdited(v);
     try { window.localStorage.setItem("harness.costAlert", v == null ? "" : String(v)); } catch {}
+    if (DEMO) return;
+    // Clearing the line leaves auto-off nothing to judge by, so it goes off too.
+    saveAutoOff(v == null && rule.enabled ? { limit: v, enabled: false } : { limit: v }).catch((err) => {
+      if (rule.enabled) toast.error("Couldn't save the auto-off limit", { description: err instanceof Error ? err.message : undefined });
+    });
   };
+  const [savingRule, setSavingRule] = useState(false);
+  const toggleAutoOff = async () => {
+    if (!rule.enabled && costAlert == null) { toast.error("Set the alert $ first", { description: "Auto-off turns an ad off when its 7-day cost goes over that line." }); return; }
+    if (!rule.enabled && !DEMO && !window.confirm(`Enable daily auto-off at ${costAlert} in your ad account's currency? After an ad's first seven days, the daily automation may pause it using the last seven complete UTC dates. With no results, total spend above the limit also triggers a pause. Reporting Sync never runs this rule.`)) return;
+    setSavingRule(true);
+    try {
+      await saveAutoOff({ enabled: !rule.enabled, limit: costAlert });
+      toast.success(rule.enabled ? "Auto-off is off" : "Auto-off is on", { description: rule.enabled ? undefined : `Checked by the daily automation, once an ad has run ${CYCLE_DAYS} days.` });
+    } catch (err) {
+      toast.error("Couldn't change auto-off", { description: err instanceof Error ? err.message : undefined });
+    }
+    setSavingRule(false);
+  };
+  // The latest auto-off per ad (the log is newest first).
+  const autoOffBy = useMemo(() => {
+    const m = new Map<string, AutoOffEvent>();
+    for (const e of snapshot.autoOffLog) if (!m.has(e.adId)) m.set(e.adId, e);
+    return m;
+  }, [snapshot.autoOffLog]);
   const [q, setQ] = useState("");
   const [stateFilter, setStateFilter] = useState<"all" | "active" | "paused">("active");
   const [sort, setSort] = useState<"newest" | "oldest" | "spend">("newest");
@@ -312,6 +340,7 @@ export default function PaidPage() {
 
   return (
     <div className="space-y-4">
+      {!DEMO && !snapshot.metaWritesEnabled && <p className="rounded-xl border border-border bg-secondary p-3 text-xs">Reporting mode. Live ad actions are off. Enable META_WRITES_ENABLED=1 in your deployment only after checking the token, assets and budget.</p>}
       <div>
         <div className="flex items-center justify-between gap-3">
           <h1 className="wordmark text-2xl lowercase">paid</h1>
@@ -324,7 +353,7 @@ export default function PaidPage() {
               onClick={async () => {
                 try {
                   await syncPaid();
-                  toast.success("Synced");
+                  toast.success("Reporting synced", { description: "No ad status or budget was changed by this sync." });
                 } catch (error) {
                   toast.error(error instanceof Error ? error.message : "Could not complete sync");
                 }
@@ -414,13 +443,14 @@ export default function PaidPage() {
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground" title={`Flag an ad when its ${L.long.toLowerCase()} on a day goes over this. Empty turns the alert off.`}>
+        <label className="flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground" title={`Flag an ad when its ${L.long.toLowerCase()} on a day goes over this. It is also the limit auto-off uses. Empty turns both off.`}>
           alert $
           <input
             type="number"
             inputMode="decimal"
             min={0}
             step={0.05}
+            key={costAlert ?? "none"}
             defaultValue={costAlert ?? ""}
             onBlur={(e) => setCostAlert(e.target.value === "" || !(Number(e.target.value) > 0) ? null : Number(e.target.value))}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
@@ -428,6 +458,20 @@ export default function PaidPage() {
             className="h-6 w-12 bg-transparent text-xs text-foreground outline-none"
           />
         </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={rule.enabled}
+          disabled={savingRule}
+          onClick={toggleAutoOff}
+          className={cn(
+            "rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition",
+            rule.enabled ? "border-primary/40 bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
+          )}
+          title={`After an ad has run ${CYCLE_DAYS} days, enabled daily automation may pause it when its cost is above the limit. With no results, total spend above the limit triggers a pause. Sync is reporting only.`}
+        >
+          auto-off {rule.enabled ? "on" : "off"}
+        </button>
         {archivedCount > 0 && <button
           type="button"
           onClick={() => setShowArchived((v) => !v)}
@@ -585,7 +629,7 @@ export default function PaidPage() {
                     </p>
                   ) : (
                   <div className={cn(collapsed[c.id + g.id] && "hidden")}>
-                    <PaidAds ads={g.ads} metrics={periodMetrics} posts={postById} costDays={costDays} costAlert={costAlert} source={source}
+                    <PaidAds ads={g.ads} metrics={periodMetrics} posts={postById} costDays={costDays} costAlert={costAlert} source={source} autoOff={autoOffBy} isActive={isActive}
                       status={(a) => <StatusChip status={a.status} effective={a.effectiveStatus} />}
                       action={(a) => <Button size="sm" variant="ghost" className="size-8 shrink-0 p-0 text-muted-foreground" title={isActive(a) ? "Pause this ad" : "Resume this ad"} disabled={busyOn === a.id} onClick={() => run("ad-state", a.id, a.id, { to: isActive(a) ? "PAUSED" : "ACTIVE" }, isActive(a) ? `pause ${a.name}.` : `resume ${a.name}.`)}>
                         {busyOn === a.id ? <Loader2 className="size-3.5 animate-spin" /> : isActive(a) ? <Pause className="size-3.5" /> : <Play className="size-3.5" />}<span className="sr-only">{isActive(a) ? "Pause" : "Resume"} {a.name}</span>
