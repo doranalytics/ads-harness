@@ -4,6 +4,8 @@ Your Instagram posts and Meta ad performance in one place. A public teaching sta
 
 **[Class recipe](https://ai301-ads-recipe.vercel.app)** · **[Try the demo](https://ads-harness.vercel.app)** · **[Class talking framework](docs/class-talking-framework.md)**
 
+Instructor assets: **[printable PDF guide](docs/ai301-ads-instructor-guide.pdf)** and the editable Markdown framework above, timed for **30 minutes teaching/building + 30 minutes Q&A**. Regenerate the PDF with `python3 scripts/make-instructor-pdf.py` after installing the optional Python `reportlab` package; it is not needed to install the app.
+
 ## Fastest start: deploy a demo in your browser
 
 [![Deploy demo with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdoranalytics%2Fads-harness&project-name=my-ads-harness&repository-name=my-ads-harness&env=NEXT_PUBLIC_DEMO&envDefaults=%7B%22NEXT_PUBLIC_DEMO%22%3A%221%22%7D&envDescription=Keep%20NEXT_PUBLIC_DEMO%3D1%20for%20the%20credential-free%20class%20demo&envLink=https%3A%2F%2Fgithub.com%2Fdoranalytics%2Fads-harness%23live-data-optional)

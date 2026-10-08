@@ -1,131 +1,162 @@
-# How to AI 301: class talking framework
+# How to AI 301: instructor guide
 
-Friday, October 9, 2026 • 60-minute core, with an optional 30-minute connector clinic.
+Friday, October 9, 2026. 30 minutes of teaching and building, then 30 minutes of Q&A.
 
 Class page: https://ai301-ads-recipe.vercel.app
 
-Public starter: https://github.com/doranalytics/ads-harness
+Public template: https://github.com/doranalytics/ads-harness
 
-Shared demo: https://ads-harness.vercel.app
+Shared sample app: https://ads-harness.vercel.app
 
-## What students should leave with
+## What the class should leave with
 
-A working local ads harness, a GitHub copy and an optional Vercel demo URL. They should be able to ask an AI to make one useful change, explain where the numbers come from, and name the prerequisites for live data. Live Meta authorization is a follow-up milestone, not something every student must finish during class.
+A working local or deployed demo, one useful change, and a clear next connection step. Students should understand the decision they want to make, the event they actually track, and the source behind each number. Live Meta authorization is a follow-up milestone, not a prerequisite to completing the lesson.
 
-## Before opening the room
+## The hour at a glance
 
-Open the recipe page, the public demo, a clean local demo and the GitHub starter. Keep a private live-account window closed during the public walkthrough. Test Wi-Fi, the copy button and a 375px phone view. Have students sign into GitHub and Vercel and install Node LTS if they want to run locally. Use a coding assistant with local file access. Students without one can still deploy a demo in the browser.
+| Minutes | Teach or demonstrate | Checkpoint |
+| --- | --- | --- |
+| 00-03 | Start with a business question | One decision, stated plainly |
+| 03-07 | Interview the business | Confirm goal, event and primary metric |
+| 07-12 | Install and inspect the demo UI | Working screen and visible sample badge |
+| 12-18 | Apify organic / Meta paid evidence | Explain engagement versus conversion |
+| 18-24 | MCP chat and a custom chart | Read data, choose matching outcomes |
+| 24-30 | GitHub / Vercel and next step | Own copy, demo URL, next checkpoint |
+| 30-60 | Q&A and selective troubleshooting | Resolve the first blocked boundary |
 
-Keep a backup downloaded recipe and this framework. Never screen-share a token, environment-variable value or provider credential screen. Use example handles and invented demo data while teaching.
+## Before the room opens
 
-## 0–5 minutes: start with the decision
+Open the recipe page, the shared demo, a clean local demo and the GitHub template. Keep private live-account windows closed. Test Wi-Fi, the copy control and a phone view. Have students sign into GitHub and Vercel and install Node LTS if they want a local app. A coding assistant needs local file access. Students without one can still deploy the sample in the browser.
 
-“Most of us can see our posts in one place and our ads in another. The question I want to answer is: which post deserves a paid test, and when should I stop that test? Today we will start from a working tool and use AI to make it useful for our own business.”
+Keep a downloaded recipe and this guide as backup. Never screen-share a token or an environment-variable value. Use the invented coffee-brand examples. No live ad activation, budget change or paid scrape is part of the public demonstration.
 
-Ask: “What is one marketing decision you currently make from a spreadsheet or by jumping between tabs?” Invite two brief examples. Write down the decision, not a feature wish list.
+The simplest backup is the public demo. If an authentication or permissions screen takes two minutes without a clear next step, name the missing prerequisite, switch back to the sample, and continue. Do not spend the class improvising broader permissions.
 
-Show Organic and Paid in the demo. Point at the **demo** badge: “These are invented examples. We can learn the interface without connecting an account or spending money.”
+<!-- pagebreak -->
 
-## 5–12 minutes: explain the four pieces
+## 00-03: start with a business question
 
-Use the simple path on the recipe page: **Instagram → Apify → harness → Meta reporting**.
+Say: “I can see my posts in one place and my ads in another. Which post deserves a paid test? When should I stop that test? Today we start from a working tool and use AI to make it useful for our own business.”
 
-“The harness is the place we read and act. Apify fetches public post information. Meta supplies paid performance. Supabase remembers the records. GitHub stores the code. Vercel serves the app. The coding assistant changes the code; it is not secretly the ad account.”
+Ask: “What is one marketing decision you currently make from a spreadsheet or by jumping between tabs?” Take two brief examples. Write down the decision, not a feature wish list.
 
-Show the hierarchy: campaign → ad set → ad. The campaign gives the objective. The ad set owns the audience and usually the budget. The ad contains the creative. The starter creates a paused ad inside an existing ad set; it does not create the whole advertising account or campaign.
+Show Organic and Paid. Point at the demo badge: “These are invented examples. We can learn the interface without connecting an account or spending money.”
 
-Ask: “Which part of this chain would you check if a number looked wrong?” Take one answer and trace it to its source.
+## 03-07: interview before choosing the chart
 
-## 12–23 minutes: everyone gets a first win
+Use three short, adaptive questions. Follow up only on a gap that changes the next step.
 
-Have students open the recipe page and **Copy full recipe** into their coding assistant. Ask them to begin with only the demo install. Give the ZIP/GitHub Desktop route to students who do not use Git. Keep the terminal path to `npm ci` and `npm run demo` visible.
+1. What do you sell, who buys it, and which markets/geographies or audiences do you already serve or want to test?
+2. What outcome do you want: awareness, visits, leads, sign-ups, purchases or installs? Which events are actually tracked, and is the pixel/dataset or other tracking verified?
+3. What campaigns do you run or plan, what budget/currency are you considering, and how do you judge success? CPA/ROAS targets and attribution windows can be unknown.
 
-“Don't solve Meta permissions before you have a working screen. First, can you open the app and see the demo badge?”
+Have the assistant summarize the offering, described markets, objective, tracked events, campaign types, budget/currency, primary metric, targets if known and attribution window. Confirm a small dashboard and campaign plan before building it.
 
-Checkpoint: Organic, Paid and Settings load locally. If Node or a local assistant is unavailable, use the page's **Deploy your demo** button and the GitHub/Vercel browser flow. Keep `NEXT_PUBLIC_DEMO=1`. No tokens are needed.
+Say: “A lead and a purchase are different outcomes. If Purchase is not measured, we have a tracking gap, not a purchase performance chart. If revenue is absent, we cannot manufacture ROAS. You do not need to invent a target just to fill the form.”
 
-Common rescue lines:
+After confirmation, save nonsecret planning inputs in the ignored .business-profile.local.json using the supplied example/schema. Keep the business plan out of public commits. The profile guides views and new charts; it does not launch campaigns or grant access. Target markets come from the owner; the starter does not measure geographic/audience breakdowns.
 
-- “Check which folder the terminal is in. It should contain package.json.”
-- “If 3000 is busy, use `npm run demo -- --port 3001`.”
-- “Reopen the terminal after installing Node.”
-- “The demo buttons explain what they would do. They do not save or send anything.”
+## 07-12: get a working screen
 
-## 23–35 minutes: make a small change with AI
+Students open the class page and copy the full recipe into Codex or Claude Code. Begin with demo installation only. Use GitHub Desktop or Download ZIP for students who do not use Git. Node 22.13+ is enough; npm ci installs the starter and npm run demo opens it.
 
-“A good request says what you want to decide, who uses it and how you will know it worked.”
+Say: “Do not solve Meta permissions before you have a working screen. Can you open the app and see the demo badge?”
 
-Use this example: “Change the header to my business name. Keep the demo badge. Make cost per result easier to understand on a phone. Show me the change and check that Organic and Paid still work.”
+Checkpoint: Organic, Paid and Settings load. If local setup is blocked, use Deploy your demo and the GitHub/Vercel browser flow with NEXT_PUBLIC_DEMO=1. No business tokens are needed.
 
-Let students choose one small change. Walk one student through the assistant's plan, the changed file and the rendered screen. Ask them to describe the behavior in ordinary language before discussing implementation.
+Rescue lines: “Check that the folder contains package.json.” “If port 3000 is busy, use npm run demo -- --port 3001.” “Reopen the terminal after installing Node.” “The sample buttons explain the action; they send nothing.”
 
-Have the assistant ask a short business interview: offering/customer/markets; desired outcome and actually tracked events; existing/planned campaigns, budget/currency, success metric and attribution window. It should summarize a metric and campaign plan for confirmation. A student who tracks leads needs a different primary chart from one who tracks purchases. If Purchase or revenue is not measured, label the tracking gap and avoid invented CPA/ROAS targets. Save confirmed nonsecret planning inputs locally in the ignored business profile; the interview does not authorize launching ads.
+<!-- pagebreak -->
 
-Show why “make it better” is hard to verify. Replace it with “At phone width I can read the result label and tell when data is missing.” Test that exact thing. Keep source changes small enough to review.
+## 12-18: show the evidence behind the numbers
 
-## 35–43 minutes: make the app shareable
+Explain the pieces: “Apify fetches public post information. Meta supplies paid reporting. Supabase remembers the records. The harness is where we read them. GitHub stores the source. Vercel serves the running app. The coding assistant changes the code.”
 
-Open GitHub's **Use this template** and Vercel's project import UI. Explain the optional Deploy Button shortcut creates the student's own copy and project. The source can be public; the live business data and credentials must not be.
+Point at the hierarchy: campaign gives the objective; ad set owns audience and usually budget; ad contains the creative. The starter creates a paused ad inside an existing ad set. It does not create the advertising account, campaign or audience.
 
-“A repository is the recipe for the app. A deployment is one running copy of it. You can share the demo URL without handing out your business account.”
+### Engagement is not conversion
 
-After deploying, open the public URL on a phone. Make one visible edit in the student's repository and explain that the linked Vercel project builds that commit. Don't teach students to paste secrets into GitHub source.
+Views, likes and comments describe attention and response to a post. They do not prove leads, sales or profit. Public Instagram counts may include paid engagement and do not reveal the full organic/paid split. Missing views, shares or saves remain unknown.
 
-## 43–51 minutes: connect data honestly
+Conversions are defined events: Lead, CompleteRegistration, Purchase or an install, for example. Confirm which event is measured and what attribution window gives it credit. A seven-day-click report and a one-day-view report are not automatically comparable.
 
-Make two columns on the board: **public Instagram** and **owned Meta Ads**.
+The starter chooses the first recognized Meta action: purchase, lead, registration, install, then link click. Show the result label before reading cost per result. A link-click cost is not a purchase CPA. A revenue-free result count is not ROAS.
 
-“Apify needs its API token and a public handle. It does not need your Instagram password. Runs may cost money and some public metrics will be missing. This cannot tell us the complete organic-versus-paid split.”
+### Two connection lanes
 
-“Meta reporting needs permission to the business assets and an access token. For the System User route, Meta asks you to choose an app when issuing the token. The app identity is part of authorization. This starter doesn't ask for an app ID or app secret in its environment, but that doesn't remove the Meta app step.”
+Apify needs its API token and a public Instagram handle. It does not need the Instagram password or a Meta app for the public scrape. The starter requests profile followers and the latest 50 posts per channel. Actor runs can cost money; check usage/pricing before Sync.
 
-Explain owned-business permissions versus building a service for other advertisers: the latter can involve advanced access, business verification and App Review. Menus and eligibility vary. Students blocked here still have a useful demo and a clear checklist.
+Meta reporting needs an assigned ad account and an access token. Instagram promotion additionally needs the linked professional Instagram/Page assets. The System User token route asks the owner to select a Meta app. The harness needs no app ID/secret env pair, but that does not remove the Meta app step. Other advertisers' assets can involve advanced access, verification and App Review.
 
-Show the environment-variable **names**, never their values. Explain the difference between `NEXT_PUBLIC_BRAND_NAME` and a server-only token. Show the Settings connector form blank. Reading data does not require enabling the starter's live write gate.
+Show environment-variable names only, with a blank connector form. Keep META_WRITES_ENABLED=0. Manual Sync reads Meta reporting and never changes its status or budget.
 
-## 51–57 minutes: paid decisions and a pause-first workflow
+### Demonstrate the control without spending
 
-“Promote makes a paused draft from an eligible owned post. It uses an existing ad set. You inspect the audience, destination and budget in Ads Manager, then Resume asks you to confirm. That activation can spend money.”
+Promote creates a PAUSED draft from an eligible owned post in an existing ad set. Inspect the audience, destination and budget in Ads Manager. Resume requires confirmation and may spend the existing budget. Meta eligibility, parent status and review still matter.
 
-Point at cost per result and the result label. “A purchase and a link click are different outcomes. The starter picks recognized reported actions in a fixed order; it doesn't make every campaign comparable.”
+Auto-off starts off and requires two opt-ins: the deployment write gate and the saved rule. After an ad's first seven days, daily automation evaluates seven complete UTC dates. It pauses when pooled cost exceeds the limit, or spend exceeds it with no results. Manual Sync never runs it. This is not a real-time spend cap.
 
-Teach the seven-day rule with invented numbers:
-
-| Seven-day spend | Results | Cost/result | Limit 20 | Outcome after initial seven days |
+| Seven-day spend | Results | Cost/result | Limit 20 | Reading |
 | --- | --- | --- | --- | --- |
-| 80 | 8 | 10 | 20 | Keep running |
-| 80 | 2 | 40 | 20 | May pause if automation is enabled |
-| 21 | 0 | unknown | 20 | May pause because spend exceeds the limit without results |
+| 80 | 8 | 10 | 20 | Below limit |
+| 80 | 2 | 40 | 20 | May pause when rule is enabled |
+| 21 | 0 | unknown | 20 | Spend without results can trigger a pause |
 | 0 | 0 | unknown | 20 | Nothing to judge |
 
-“There are two opt-ins: live ad actions in the deployment and the saved auto-off rule in Paid. Both start off. Manual Sync only refreshes reporting. The daily automation uses the last seven complete UTC dates after an ad's first seven days. It is not a real-time spend cap.”
+<!-- pagebreak -->
 
-Do not demonstrate a real activation or paid scrape during the public lesson. Discuss the confirmation in the demo or use the screenshots, with the demo badge visible.
+## 18-24: use MCP chat to build the missing chart
 
-## 57–60 minutes: one concrete next step
+Configure the custom Ads Harness MCP in Codex or Claude Code using docs/mcp-setup.md. Use the public sample and no credential. It runs locally over stdio, reads the combined stored reporting and exposes eight read-only tools. It is not Meta's official MCP server. Meta remains the app's Graph/Marketing API connection.
 
-Ask students to paste their URL or describe their local change, without account data. Have them say which stage they reached: local demo, deployed demo, real public posts, Meta reporting, or reviewed paused draft.
+Say: “MCP lets the assistant ask the harness for data. The assistant can then edit our local app to build a chart. Reading the data is separate from changing the ad account.”
 
-“You don't need every connector today. You need a working tool, one useful change and an understanding of where each number comes from. Your next task is the first unfinished stage in your own copy.”
+Prompt: “Use ads-harness to inspect freshness and metric definitions. Ask me the short business questions. Summarize a dashboard plan for my confirmation. Do not launch anything.”
 
-Give the recipe and Meta checklist links. Ask for a practical follow-up: “Use the tool once this week. Write down the decision it helped you make and the data you still couldn't trust.”
+Then: “Inspect the ad result labels. Show the last seven days for a comparable ad, then add a matching spend and cost-per-result chart to my local dashboard. Check totals against the actual tool output. Keep unknowns visible and sample labels on.”
 
-## Optional 30-minute connector clinic
+Use get_overview, get_metric_definitions and get_business_brief first, list_paid_ads to pick a comparable event, and get_paid_timeseries for chart-ready dates. The MCP prompt plan_business_dashboard supports the interview workflow. Do not blend unlike outcomes to make a tidy chart.
 
-You can replace part of the clinic with a chat demonstration. Configure the custom Ads Harness MCP in Codex or Claude Code using `docs/mcp-setup.md`, with the public demo and no credential. Ask `get_overview`, then inspect `list_paid_ads` result labels, then request a seven-day per-ad series. Ask the coding assistant to add a matching chart to a local copy. Explain: MCP reads the data; the assistant edits the chart. It is our custom local adapter, not Meta's official server, and it has no mutation/sync tools. Live access would require a separately consented read-only credential and private configuration.
+MCP does not sync providers, run paid scrapers, create campaigns, activate ads or change budgets. Production charts should read the authenticated Snapshot/store, not hardcode a private MCP export. Live private access requires a separately consented read-only MCP_READ_TOKEN and an ignored local env file. No such credential is created by installing the starter.
 
-Use private breakout help for Supabase schema/env setup (10 minutes), Apify roster/token/usage controls (10 minutes), and Meta asset/app/token troubleshooting (10 minutes). Student enters secrets directly. Keep reporting mode on. If permissions are unavailable, record the exact missing permission or asset and stop that connection step. Do not improvise broader authorization or account/spend changes.
+## 24-30: give each student their own copy
 
-## Answers worth keeping short
+Show GitHub → Use this template, then Vercel → Add New → Project → Import Git Repository. The Deploy demo shortcut creates the student's own repository and project. Keep NEXT_PUBLIC_DEMO=1. The public source is the recipe for the app; the deployment is one running copy. Tokens and private business records never belong in the source.
 
-- **Do I need a Meta app?** For this System User token route, yes. The harness itself only receives the token and asset IDs; it needs no app ID/secret env pair.
-- **Is this Meta MCP?** The web app calls Graph/Marketing API directly. We provide our own Ads Harness MCP so Codex/Claude Code can read its combined organic/paid data and build charts. It is not Meta's official server.
-- **Does it build my campaigns?** No. It reads campaigns and creates paused ads inside a configured existing ad set.
-- **Can I use it with no Instagram account?** Yes, the demo needs no accounts. Live Apify needs a public handle. Creating your own ads needs owned, assigned professional Instagram/Page assets.
-- **Can it guarantee profitable ads?** No. It organizes reported data and provides controls. Attribution, objectives, reporting delays and business economics still matter.
-- **Can I host it for free?** The demo needs no data-service subscription, but hosting terms and quotas apply. Choose a Vercel plan permitted for your use; commercial use is outside Hobby terms. Apify runs and actual ads can cost money.
-- **Can everyone share Brian's live account?** Use the public demo. Each business creates its own copy and privately connects its own accounts.
+Have one student ask for a small improvement: “Use my business name. Make the result label and unknown values readable on a phone. Show the change and check Organic and Paid still work.”
 
-## Teaching verification boundary
+Say: “A good request names the decision, the user and what success looks like.” Replace “make it better” with “at phone width I can read the event and tell when data is missing.” Review the changed file and the rendered screen.
 
-The published lesson is verified in demo mode plus offline tests. Meta and Apify live integration must be verified by the owner of the student's assets. Never describe mocked tests as proof that an actual account is connected or an ad was approved.
+Checkpoint: working local/deployed sample, one useful change and a next step. Let students identify their stage: demo, public posts, Meta reporting or inspected paused draft. Live permissions can take longer. A blocked connector does not erase the progress.
+
+<!-- pagebreak -->
+
+## 30-60: Q&A and selective troubleshooting
+
+Use the first ten minutes for questions about the tool and metrics, the next ten for setup gaps, and the last ten for one student chart/change and next steps. Follow the room's actual questions rather than completing every connector.
+
+Resolve the first broken boundary: UI → app route → provider → database → response. A permission error is an access gap; do not hide it with invented data. If authentication stalls for two minutes, state the missing asset/permission and return to the sample. Student enters secrets privately in the app/provider UI; no public screen-share of token values.
+
+### Answers to keep short
+
+- Do I need a Meta app? For this System User token route, yes. The harness receives the token/asset IDs, not an app ID/secret env pair.
+- Is this Meta MCP? Our custom Ads Harness MCP reads the harness's combined reporting. It is not Meta's official server. The web app calls Graph/Marketing API directly.
+- Does it create campaigns? No. It reads campaigns and can create PAUSED ads inside a configured existing ad set after live actions are enabled.
+- Can I begin with no accounts? The sample needs no business account. Live public posts need Apify and a public handle; owned Instagram ads need assigned assets and token permissions.
+- What if tracking is missing? Show the gap. Use attention/traffic metrics for what is actually measured; verify the conversion event before using CPA/ROAS.
+- How should I choose a market? Start with the markets/audiences the owner describes and the offer's constraints. Make a proposal and confirm it. Do not infer sensitive traits or claim geographic results this starter does not fetch.
+- Will it guarantee profitable ads? No. Attribution, reporting delays, objective choice and the business's economics still matter.
+- Is hosting free? Terms/quotas apply. Vercel Hobby is personal/non-commercial; choose a plan permitted for the use. Apify runs and actual ads may cost money.
+- Can everyone share Brian's live account? Use the public invented demo. Each business creates its own copy and connects its own assets privately.
+
+### Close with one concrete next step
+
+Ask: “What decision will you use this for this week, and which missing piece is your next checkpoint?” Invite a demo URL or a description of the change, without private account data.
+
+Say: “You do not need every connector today. You need a working tool, one useful change and an understanding of where the numbers come from.”
+
+Give the class page and Meta checklist. Ask students to use their copy once this week and note the decision it helped them make and the data they still could not trust.
+
+## Verification boundary for teaching
+
+The published lesson and MCP are verified in sample mode, with offline provider mocks and an official SDK client. Live Meta/Apify integration must be verified by the owner of the student's assets. No real ad approval, spend, live mutation or paid scrape is demonstrated by these tests.
